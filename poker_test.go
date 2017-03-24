@@ -99,11 +99,7 @@ func TestDescriptions(t *testing.T) {
 func TestRankings(t *testing.T) {
 	// These hands are in descending order of strength.
 	// 3-card hands should in general rank lower than 5-card
-	// hands, but in the case of trips, they rank the same as
-	// the corresponding 5-card hand (eg: AAA and AAA-3-2
-	// rank equal). This isn't a problem because you can't have the
-	// same trips in two parts of a hand.
-	// We mark the hands where this occurs with an initial "!" here.
+	// hands.
 	hands := []string{
 		"HA HK HQ HJ HT",
 		"D5 D4 D3 D2 DA",
@@ -120,12 +116,12 @@ func TestRankings(t *testing.T) {
 		"H6 D5 C4 D3 H2",
 		"H5 D4 C3 D2 CA",
 		"HA DA CA C3 D2",
-		"!HA DA CA",
+		"HA DA CA",
 		"HQ DQ CQ C3 D2",
-		"!HQ DQ CQ",
+		"HQ DQ CQ",
 		"HJ DJ CJ",
 		"H2 D2 C2 CA DK",
-		"!H2 D2 C2",
+		"H2 D2 C2",
 		"HA DA CK DK H3",
 		"HA DA CQ DQ H4",
 		"HT DT C8 D8 D2",
@@ -150,16 +146,12 @@ func TestRankings(t *testing.T) {
 	prevHand := ""
 	for i := range hands {
 		h := hands[i]
-		eqOK := h[0] == '!'
-		if eqOK {
-			h = h[1:]
-		}
 		h0, err := parseHand(h)
 		if err != nil {
 			t.Fatalf("parseHand(%s) gave error %s", hands[i], err)
 		}
 		ev := Eval(h0)
-		if eqOK && ev != prevEV || !eqOK && ev >= prevEV {
+		if ev >= prevEV {
 			t.Errorf("Expected %s to beat %s, but got scores %d and %d", prevHand, hands[i], prevEV, ev)
 		}
 		prevEV, prevHand = ev, hands[i]

@@ -171,8 +171,8 @@ func evalSlow(c []Card, replace bool) (eval, error) {
 	return eval{}, fmt.Errorf("failed to eval hand %v", c)
 }
 
-// ScoreMax is the largest possible result from Eval (with replace=false).
-const ScoreMax = 6785
+// ScoreMax is the largest possible result from Eval (with replace=true).
+const ScoreMax = 7929
 
 func index(c []Card) int32 {
 	r := int32(1)
@@ -301,7 +301,7 @@ func init() {
 					}
 				}
 				idx := index(hand)
-				ev, err := evalSlow(hand, false)
+				ev, err := evalSlow(hand, true)
 				if err != nil {
 					log.Fatalf("evalSlow(%v) gave error %s", hand, err)
 				}
