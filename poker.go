@@ -42,6 +42,12 @@ func (c Card) Rank() Rank {
 	return 0
 }
 
+// RawRank returns a number from 0 to 12 representing the
+// strength of the card. 2->0, 3->1, ..., K->11, A->12.
+func (c Card) RawRank() int {
+	return (int(c.Rank()) + 11) % 13
+}
+
 func (c Card) String() string {
 	return c.Suit().String() + c.Rank().String()
 }
