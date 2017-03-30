@@ -62,6 +62,9 @@ func TestDescriptions(t *testing.T) {
 		{hand: "DT CT HK", wantLong: "TT-K"},
 		{hand: "HA HQ H2", wantLong: "A-Q-2"},
 		{hand: "H5 H2 H3", wantLong: "5-3-2"},
+		{hand: "HK DK S2 D3 CQ DJ D7", wantLong: "KK-Q-J-7"},
+		{hand: "SA HA DA DK HK SQ CA", wantLong: "AAAA-K", wantShort: "AAAA-x"},
+		{hand: "SA SQ ST DT S5 S3 CA", wantLong: "AQT53 flush"},
 	}
 	for i := range hands {
 		h0, err := parseHand(hands[i].hand)

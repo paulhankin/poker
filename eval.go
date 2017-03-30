@@ -75,7 +75,7 @@ func isFlush(c []Card) bool {
 	return true
 }
 
-// Describe fully describes a 3 or 5 card poker hand.
+// Describe fully describes a 3, 5 or 7 card poker hand.
 func Describe(c []Card) (string, error) {
 	eval, err := evalSlow(c, true)
 	if err != nil {
@@ -86,7 +86,7 @@ func Describe(c []Card) (string, error) {
 	return strings.TrimRight(eval.desc, "-"), nil
 }
 
-// Describe describes a 3 or 5 card poker hand with enough detail
+// Describe describes a 3, 5 or 7 card poker hand with enough detail
 // to compare it to another chinese poker hand.
 func DescribeShort(c []Card) (string, error) {
 	eval, err := evalSlow(c, false)
@@ -98,7 +98,19 @@ func DescribeShort(c []Card) (string, error) {
 	return strings.TrimRight(eval.desc, "-"), nil
 }
 
-// eval5Slow evaluates a 3- or 5- card poker hand.
+func evalSlow7(c []Card, replace bool) (eval, error) {
+	var h [7]Card
+	copy(h[:], c)
+	rank := Eval7(&h)
+	hand, ok := EvalToHand5(rank)
+	if !ok {
+		return eval{}, fmt.Errorf("failed to construct 5-card best hand from %s", c)
+	}
+	return evalSlow(hand, replace)
+
+}
+
+// eval5Slow evaluates a 3- or 5- or 7- card poker hand.
 // The result is a number which can be compared
 // with other hand's evaluations to correctly rank them as poker
 // hands.
@@ -108,6 +120,9 @@ func DescribeShort(c []Card) (string, error) {
 //
 // This function is used to build tables for fast hand evaluation.
 func evalSlow(c []Card, replace bool) (eval, error) {
+	if len(c) == 7 {
+		return evalSlow7(c, replace)
+	}
 	flush := isFlush(c)
 	ranks := map[Rank]int{}
 	dupes := [6]int{}  // uniqs, pairs, trips, quads, quins
@@ -224,6 +239,29 @@ func Eval(c []Card) int16 {
 		}
 		k = hash(k)
 	}
+}
+
+// Eval7 returns the ranking of the best 5-card hand
+// that's a subset of the given 7 cards.
+func Eval7(c *[7]Card) int16 {
+	var h [5]Card
+	var best int16
+	for i := 0; i < 6; i++ {
+		for j := i + 1; j < 7; j++ {
+			l := 0
+			for k := 0; k < 7; k++ {
+				if k == i || k == j {
+					continue
+				}
+				h[l] = c[k]
+				l++
+			}
+			if ev := Eval5(&h); ev > best {
+				best = ev
+			}
+		}
+	}
+	return best
 }
 
 // Eval5 is an optimized version of Eval which requires a 5-card hand.
