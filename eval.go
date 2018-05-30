@@ -87,7 +87,9 @@ func Describe(c []Card) (string, error) {
 }
 
 // Describe describes a 3, 5 or 7 card poker hand with enough detail
-// to compare it to another chinese poker hand.
+// to compare it to another poker hand which shares no cards in common.
+// For example, KKK-87 is represented as KKK-x-y since the kickers can
+// never matter (except that they are different).
 func DescribeShort(c []Card) (string, error) {
 	eval, err := evalSlow(c, false)
 	if err != nil {
@@ -230,6 +232,7 @@ func EvalToHand3(e int16) ([]Card, bool) {
 
 // Eval takes a 3- or 5- card poker hand and returns a number
 // which can be used to rank it against other poker hands.
+// The returned value is in the range 0 to ScoreMax.
 func Eval(c []Card) int16 {
 	key := index(c)
 	k := key
