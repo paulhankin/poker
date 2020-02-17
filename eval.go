@@ -247,24 +247,50 @@ func Eval(c []Card) int16 {
 // Eval7 returns the ranking of the best 5-card hand
 // that's a subset of the given 7 cards.
 func Eval7(c *[7]Card) int16 {
-	var h [5]Card
+	idx := [5]int{4, 3, 2, 1, 0}
 	var best int16
-	for i := 0; i < 6; i++ {
-		for j := i + 1; j < 7; j++ {
-			l := 0
-			for k := 0; k < 7; k++ {
-				if k == i || k == j {
-					continue
-				}
-				h[l] = c[k]
-				l++
-			}
-			if ev := Eval5(&h); ev > best {
-				best = ev
-			}
+	for {
+		if ev := eval5idx(c, idx); ev > best {
+			best = ev
+		}
+		if idx[0] < 6 {
+			idx[0]++
+		} else if idx[1] < 5 {
+			idx[1]++
+			idx[0] = idx[1] + 1
+		} else if idx[2] < 4 {
+			idx[2]++
+			idx[1] = idx[2] + 1
+			idx[0] = idx[1] + 1
+		} else if idx[3] < 3 {
+			idx[3]++
+			idx[2] = idx[3] + 1
+			idx[1] = idx[2] + 1
+			idx[0] = idx[1] + 1
+		} else if idx[4] < 2 {
+			idx[4]++
+			idx[3] = idx[4] + 1
+			idx[2] = idx[3] + 1
+			idx[1] = idx[2] + 1
+			idx[0] = idx[1] + 1
+		} else {
+			return best
 		}
 	}
-	return best
+}
+
+func eval5idx(c *[7]Card, idx [5]int) int16 {
+	key := int32(c[idx[0]]&0x3f) * int32(c[idx[1]]&0x3f) * int32(c[idx[2]]&0x3f) * int32(c[idx[3]]&0x3f) * int32(c[idx[4]]&0x3f)
+	if c[idx[0]]&c[idx[1]]&c[idx[2]]&c[idx[3]]&c[idx[4]]&0x3c0 != 0 {
+		key = -key
+	}
+	k := key
+	for {
+		if evalTable[k&evalMask].key == key {
+			return evalTable[k&evalMask].val
+		}
+		k = hash(k)
+	}
 }
 
 // Eval5 is an optimized version of Eval which requires a 5-card hand.

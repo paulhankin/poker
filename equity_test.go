@@ -106,3 +106,39 @@ func TestEquity(t *testing.T) {
 	}
 
 }
+
+func BenchmarkHoldemEquitiesPreflop(b *testing.B) {
+	card := func(s string) Card {
+		c, ok := NameToCard[s]
+		if !ok {
+			b.Fatalf("can't parse card %s", s)
+		}
+		return c
+	}
+	hands := [][2]Card{[2]Card{card("CA"), card("HK")}, [2]Card{card("DK"), card("HT")}}
+	board := []Card{}
+	for n := 0; n < b.N; n++ {
+		_, err := HoldemEquities(hands, board)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkHoldemEquitiesFlop(b *testing.B) {
+	card := func(s string) Card {
+		c, ok := NameToCard[s]
+		if !ok {
+			b.Fatalf("can't parse card %s", s)
+		}
+		return c
+	}
+	hands := [][2]Card{[2]Card{card("CA"), card("HK")}, [2]Card{card("DK"), card("HT")}, [2]Card{card("H9"), card("D9")}}
+	board := []Card{card("CT"), card("C8"), card("DJ")}
+	for n := 0; n < b.N; n++ {
+		_, err := HoldemEquities(hands, board)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
