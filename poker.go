@@ -15,7 +15,8 @@ import (
 // See http://www.suffecool.net/poker/evaluator.html
 type Card uint16
 
-// Suit returns the suit of a card.
+// Suit returns the suit of a card. It may return BadSuit if
+// the card isn't valid, but may also return a valid suit.
 func (c Card) Suit() Suit {
 	switch c >> 6 {
 	case 1:
@@ -27,8 +28,7 @@ func (c Card) Suit() Suit {
 	case 8:
 		return Spade
 	}
-	log.Fatalf("unknown suit: %d", c>>6)
-	return Club
+	return BadSuit
 }
 
 // Rank returns the rank of a card.
@@ -40,6 +40,11 @@ func (c Card) Rank() Rank {
 		}
 	}
 	return 0
+}
+
+// Valid reports whether the card is a valid card.
+func (c Card) Valid() bool {
+	return c.Rank() != 0 && c.Suit() != BadSuit
 }
 
 // RawRank returns a number from 0 to 12 representing the
@@ -60,6 +65,8 @@ const (
 	Diamond = Suit(1)
 	Heart   = Suit(2)
 	Spade   = Suit(3)
+
+	BadSuit = Suit(255)
 )
 
 var suits = map[Suit]string{
@@ -70,7 +77,11 @@ var suits = map[Suit]string{
 }
 
 func (s Suit) String() string {
-	return suits[s]
+	r, ok := suits[s]
+	if !ok {
+		return "?"
+	}
+	return r
 }
 
 // A Rank describes the rank of a card: A23456789TJQK.
@@ -78,6 +89,9 @@ func (s Suit) String() string {
 type Rank int
 
 func (r Rank) String() string {
+	if r < 1 || r > 13 {
+		return "?"
+	}
 	return "A23456789TJQK"[r-1 : r]
 }
 

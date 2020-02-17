@@ -112,7 +112,7 @@ func evalSlow7(c []Card, replace bool) (eval, error) {
 
 }
 
-// eval5Slow evaluates a 3- or 5- or 7- card poker hand.
+// evalSlow evaluates a 3- or 5- or 7- card poker hand.
 // The result is a number which can be compared
 // with other hand's evaluations to correctly rank them as poker
 // hands.
