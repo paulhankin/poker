@@ -6,45 +6,28 @@ import (
 	"log"
 )
 
-// A Card is a single playing card.
-// The top two bits are the suit, and the lowest 6 bits
-// store the (r-1)th prime number.
-// This representation enables fast hand evaluation.
-// Heavily based on the ideas from Cactus Pete's poker
-// hand evaluator, which can be found here:
-// See http://www.suffecool.net/poker/evaluator.html
-type Card uint16
+// A Card is a single playing card. It's represented as a
+// number from 0 to 51. The bottom two bits are the suit.
+type Card uint8
 
-// Suit returns the suit of a card. It may return BadSuit if
-// the card isn't valid, but may also return a valid suit.
+// Suit returns the suit of a card.
 func (c Card) Suit() Suit {
-	switch c >> 6 {
-	case 1:
-		return Club
-	case 2:
-		return Diamond
-	case 4:
-		return Heart
-	case 8:
-		return Spade
-	}
-	return BadSuit
+	return Suit(c & 3)
 }
 
-// Rank returns the rank of a card.
+// Rank returns the rank of a card. It returns 0
+// if the card isn't valid.
 func (c Card) Rank() Rank {
-	r := uint16(c & 0x3f)
-	for pr := Rank(1); pr <= 13; pr++ {
-		if primes[pr-1] == r {
-			return pr
-		}
+	r := Rank(c>>2) + 1
+	if r > 13 {
+		return 0
 	}
-	return 0
+	return r
 }
 
 // Valid reports whether the card is a valid card.
 func (c Card) Valid() bool {
-	return c.Rank() != 0 && c.Suit() != BadSuit
+	return c < 52
 }
 
 // RawRank returns a number from 0 to 12 representing the
@@ -104,7 +87,7 @@ func MakeCard(s Suit, r Rank) (Card, error) {
 	if s > 3 || r == 0 || r > 13 {
 		return 0, fmt.Errorf("illegal card %d %d", s, r)
 	}
-	return Card(uint16(1<<(6+s)) | primes[r-1]), nil
+	return Card(r-1)*4 + Card(s), nil
 }
 
 // NameToCard maps card names (for example, "C8" or "HA") to a card value.

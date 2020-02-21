@@ -191,28 +191,6 @@ func evalSlow(c []Card, replace bool) (eval, error) {
 // ScoreMax is the largest possible result from Eval (with replace=true).
 const ScoreMax = 7929
 
-func index(c []Card) int32 {
-	r := int32(1)
-	suits := uint16(0x3c0)
-	for _, ci := range c {
-		r *= int32(ci & 0x3f)
-		suits &= uint16(ci)
-	}
-	if len(c) == 5 && suits&0x3c0 != 0 {
-		return -r
-	}
-	return r
-}
-
-type evalTableEntry struct {
-	key int32
-	val int16
-}
-
-var evalTable [32768]evalTableEntry
-
-const evalMask = 0x7fff
-
 var (
 	rankTo5 = map[int16][]Card{}
 	rankTo3 = map[int16][]Card{}
@@ -234,14 +212,13 @@ func EvalToHand3(e int16) ([]Card, bool) {
 // which can be used to rank it against other poker hands.
 // The returned value is in the range 0 to ScoreMax.
 func Eval(c []Card) int16 {
-	key := index(c)
-	k := key
-	for {
-		if evalTable[k&evalMask].key == key {
-			return evalTable[k&evalMask].val
-		}
-		k = hash(k)
-	}
+	ev, _ := evalSlow(c, true)
+	return slowRankToPacked[ev.rank]
+}
+
+func eval5idx(c *[7]Card, idx [5]int) int16 {
+	h := [5]Card{c[idx[0]], c[idx[1]], c[idx[2]], c[idx[3]], c[idx[4]]}
+	return Eval(h[:])
 }
 
 // Eval7 returns the ranking of the best 5-card hand
@@ -279,45 +256,14 @@ func Eval7(c *[7]Card) int16 {
 	}
 }
 
-func eval5idx(c *[7]Card, idx [5]int) int16 {
-	key := int32(c[idx[0]]&0x3f) * int32(c[idx[1]]&0x3f) * int32(c[idx[2]]&0x3f) * int32(c[idx[3]]&0x3f) * int32(c[idx[4]]&0x3f)
-	if c[idx[0]]&c[idx[1]]&c[idx[2]]&c[idx[3]]&c[idx[4]]&0x3c0 != 0 {
-		key = -key
-	}
-	k := key
-	for {
-		if evalTable[k&evalMask].key == key {
-			return evalTable[k&evalMask].val
-		}
-		k = hash(k)
-	}
-}
-
 // Eval5 is an optimized version of Eval which requires a 5-card hand.
 func Eval5(c *[5]Card) int16 {
-	key := int32(c[0]&0x3f) * int32(c[1]&0x3f) * int32(c[2]&0x3f) * int32(c[3]&0x3f) * int32(c[4]&0x3f)
-	if c[0]&c[1]&c[2]&c[3]&c[4]&0x3c0 != 0 {
-		key = -key
-	}
-	k := key
-	for {
-		if evalTable[k&evalMask].key == key {
-			return evalTable[k&evalMask].val
-		}
-		k = hash(k)
-	}
+	return Eval(c[:])
 }
 
 // Eval3 is an optimized version of Eval which requires a 3-card hand.
 func Eval3(c *[3]Card) int16 {
-	key := int32(c[0]&0x3f) * int32(c[1]&0x3f) * int32(c[2]&0x3f)
-	k := key
-	for {
-		if evalTable[k&evalMask].key == key {
-			return evalTable[k&evalMask].val
-		}
-		k = hash(k)
-	}
+	return Eval(c[:])
 }
 
 func nextIdx(ix []int, k int, dupes int) bool {
@@ -332,13 +278,10 @@ func nextIdx(ix []int, k int, dupes int) bool {
 	}
 }
 
-func hash(k int32) int32 {
-	return (k >> 4) ^ (k << 6)
-}
+var slowRankToPacked map[int]int16
 
 func init() {
 	uniqScores := map[int]bool{}
-	scores := map[int32]int{}
 	hand5, hand3 := map[int][]Card{}, map[int][]Card{}
 	for _, size := range []int{3, 5} {
 		indexes := make([]int, size)
@@ -367,15 +310,10 @@ func init() {
 						log.Fatalf("failed to create card: %s", err)
 					}
 				}
-				idx := index(hand)
 				ev, err := evalSlow(hand, true)
 				if err != nil {
 					log.Fatalf("evalSlow(%v) gave error %s", hand, err)
 				}
-				if oldEV, ok := scores[idx]; ok && oldEV != ev.rank {
-					log.Fatalf("found different evals for hand %v", hand)
-				}
-				scores[idx] = ev.rank
 				if size == 3 {
 					hand3[ev.rank] = append([]Card{}, hand...)
 				} else {
@@ -394,20 +332,15 @@ func init() {
 		allScores = append(allScores, k)
 	}
 	sort.Ints(allScores)
-	keys := []int{}
-	for k, _ := range scores {
-		keys = append(keys, int(k))
+
+	slowRankToPacked = map[int]int16{}
+	for i, k := range allScores {
+		slowRankToPacked[k] = int16(i)
 	}
-	sort.Ints(keys)
-	for _, k := range keys {
-		key := int32(k)
-		for evalTable[key&evalMask].key != 0 {
-			key = hash(key)
-		}
-		val := int16(sort.SearchInts(allScores, scores[int32(k)]))
-		evalTable[key&evalMask] = evalTableEntry{int32(k), val}
-		rankTo5[val] = hand5[scores[int32(k)]]
-		rankTo3[val] = hand3[scores[int32(k)]]
+
+	for rank, packedRank := range slowRankToPacked {
+		rankTo5[packedRank] = hand5[rank]
+		rankTo3[packedRank] = hand3[rank]
 	}
 	if ScoreMax != len(allScores)-1 {
 		log.Fatalf("Expected max score of %d, but found %d", ScoreMax, len(allScores)-1)
