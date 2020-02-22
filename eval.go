@@ -36,18 +36,27 @@ func evalScore(f string, v int, c ...int) eval {
 	}
 }
 
+func evalScoreNoText(f string, v int, c ...int) eval {
+	r := v
+	for i := 0; i < 5; i++ {
+		r *= 16
+		if i < len(c) {
+			r += c[i]
+		}
+	}
+	return eval{
+		rank: r,
+	}
+}
+
 // find picks the nth highest rank of r which is equal to k,
 // returning a number which is higher for higher cards.
 // Returns 0 if there is none.
-func find(k int, r map[Rank]int, n int) int {
-	for i := 0; i < 13; i++ {
-		rank := Rank(14 - i)
-		if i == 0 {
-			rank = 1
-		}
-		if r[rank] == k {
+func find(k int, r *[13]int, n int) int {
+	for i := 12; i >= 0; i-- {
+		if r[i] == k {
 			if n == 0 {
-				return 14 - i
+				return i + 2
 			}
 			n--
 		}
@@ -55,11 +64,11 @@ func find(k int, r map[Rank]int, n int) int {
 	return 0
 }
 
-func find1(r map[Rank]int, n int) int {
+func find1(r *[13]int, n int) int {
 	return find(1, r, n)
 }
 
-func find2(r map[Rank]int, n int) int {
+func find2(r *[13]int, n int) int {
 	return find(2, r, n)
 }
 
@@ -77,7 +86,7 @@ func isFlush(c []Card) bool {
 
 // Describe fully describes a 3, 5 or 7 card poker hand.
 func Describe(c []Card) (string, error) {
-	eval, err := evalSlow(c, true)
+	eval, err := evalSlow(c, true, true)
 	if err != nil {
 		return "", err
 	}
@@ -91,7 +100,7 @@ func Describe(c []Card) (string, error) {
 // For example, KKK-87 is represented as KKK-x-y since the kickers can
 // never matter (except that they are different).
 func DescribeShort(c []Card) (string, error) {
-	eval, err := evalSlow(c, false)
+	eval, err := evalSlow(c, false, true)
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +109,7 @@ func DescribeShort(c []Card) (string, error) {
 	return strings.TrimRight(eval.desc, "-"), nil
 }
 
-func evalSlow7(c []Card, replace bool) (eval, error) {
+func evalSlow7(c []Card, replace, text bool) (eval, error) {
 	var h [7]Card
 	copy(h[:], c)
 	rank := Eval7(&h)
@@ -108,7 +117,7 @@ func evalSlow7(c []Card, replace bool) (eval, error) {
 	if !ok {
 		return eval{}, fmt.Errorf("failed to construct 5-card best hand from %s", c)
 	}
-	return evalSlow(hand, replace)
+	return evalSlow(hand, replace, text)
 
 }
 
@@ -121,19 +130,24 @@ func evalSlow7(c []Card, replace bool) (eval, error) {
 // deck (for example: the kickers with trip aces don't matter).
 //
 // This function is used to build tables for fast hand evaluation.
-func evalSlow(c []Card, replace bool) (eval, error) {
+func evalSlow(c []Card, replace, text bool) (eval, error) {
 	if len(c) == 7 {
-		return evalSlow7(c, replace)
+		return evalSlow7(c, replace, text)
+	}
+	es := evalScore
+	if !text {
+		es = evalScoreNoText
 	}
 	flush := isFlush(c)
-	ranks := map[Rank]int{}
+	ranks := &[13]int{}
 	dupes := [6]int{}  // uniqs, pairs, trips, quads, quins
 	str8s := [13]int{} // finds straights
 	str8top := 0       // set to the top card of the straight, if any
 	for _, ci := range c {
-		ranks[ci.Rank()] += 1
-		dupes[ranks[ci.Rank()]]++
-		dupes[ranks[ci.Rank()]-1]--
+		rawr := ci.RawRank()
+		ranks[rawr] += 1
+		dupes[ranks[rawr]]++
+		dupes[ranks[rawr]-1]--
 		for i := 0; i < 5; i++ {
 			idx := (int(ci.Rank()) + i) % 13
 			str8s[idx] |= 1 << uint(i)
@@ -144,46 +158,46 @@ func evalSlow(c []Card, replace bool) (eval, error) {
 		}
 	}
 	if !flush && str8top == 0 && dupes[1] == len(c) { // No pair
-		return evalScore("%s-%s-%s-%s-%s", 0, find1(ranks, 0), find1(ranks, 1), find1(ranks, 2), find1(ranks, 3), find1(ranks, 4)), nil
+		return es("%s-%s-%s-%s-%s", 0, find1(ranks, 0), find1(ranks, 1), find1(ranks, 2), find1(ranks, 3), find1(ranks, 4)), nil
 	}
 	if dupes[2] == 1 && dupes[3] == 0 { // One pair
-		return evalScore("%[1]s%[1]s-%s-%s-%s", 1, find2(ranks, 0), find1(ranks, 0), find1(ranks, 1), find1(ranks, 2)), nil
+		return es("%[1]s%[1]s-%s-%s-%s", 1, find2(ranks, 0), find1(ranks, 0), find1(ranks, 1), find1(ranks, 2)), nil
 	}
 	if dupes[2] == 2 { // Two pair
-		return evalScore("%[1]s%[1]s-%[2]s%[2]s-%[3]s", 2, find2(ranks, 0), find2(ranks, 1), find1(ranks, 0)), nil
+		return es("%[1]s%[1]s-%[2]s%[2]s-%[3]s", 2, find2(ranks, 0), find2(ranks, 1), find1(ranks, 0)), nil
 	}
 	if dupes[3] == 1 && dupes[2] == 0 { // Trips
 		if replace {
-			return evalScore("%[1]s%[1]s%[1]s-%s-%s", 3, find(3, ranks, 0), find1(ranks, 0), find1(ranks, 1)), nil
+			return es("%[1]s%[1]s%[1]s-%s-%s", 3, find(3, ranks, 0), find1(ranks, 0), find1(ranks, 1)), nil
 		}
 		if len(c) == 5 {
-			return evalScore("%[1]s%[1]s%[1]s-x-y", 3, find(3, ranks, 0)), nil // ignore kickers
+			return es("%[1]s%[1]s%[1]s-x-y", 3, find(3, ranks, 0)), nil // ignore kickers
 		}
-		return evalScore("%[1]s%[1]s%[1]s", 3, find(3, ranks, 0)), nil
+		return es("%[1]s%[1]s%[1]s", 3, find(3, ranks, 0)), nil
 	}
 	if str8top != 0 && !flush { // Straight
-		return evalScore("%s straight", 4, (str8top+11)%13+2), nil
+		return es("%s straight", 4, (str8top+11)%13+2), nil
 	}
 	if flush && str8top == 0 { // Flush
-		return evalScore("%s%s%s%s%s flush", 5, find1(ranks, 0), find1(ranks, 1), find1(ranks, 2), find1(ranks, 3), find1(ranks, 4)), nil
+		return es("%s%s%s%s%s flush", 5, find1(ranks, 0), find1(ranks, 1), find1(ranks, 2), find1(ranks, 3), find1(ranks, 4)), nil
 	}
 	if dupes[2] == 1 && dupes[3] == 1 { // Full house
 		if replace {
-			return evalScore("%[1]s%[1]s%[1]s-%[2]s%[2]s", 6, find(3, ranks, 0), find2(ranks, 0)), nil
+			return es("%[1]s%[1]s%[1]s-%[2]s%[2]s", 6, find(3, ranks, 0), find2(ranks, 0)), nil
 		}
-		return evalScore("%[1]s%[1]s%[1]s-xx", 6, find(3, ranks, 0)), nil // ignore lower pair
+		return es("%[1]s%[1]s%[1]s-xx", 6, find(3, ranks, 0)), nil // ignore lower pair
 	}
 	if dupes[4] == 1 { // Quads
 		if replace {
-			return evalScore("%[1]s%[1]s%[1]s%[1]s-%[2]s", 7, find(4, ranks, 0), find1(ranks, 0)), nil
+			return es("%[1]s%[1]s%[1]s%[1]s-%[2]s", 7, find(4, ranks, 0), find1(ranks, 0)), nil
 		}
-		return evalScore("%[1]s%[1]s%[1]s%[1]s-x", 7, find(4, ranks, 0)), nil // ignore kicker
+		return es("%[1]s%[1]s%[1]s%[1]s-x", 7, find(4, ranks, 0)), nil // ignore kicker
 	}
 	if str8top != 0 && flush { // Straight flush
-		return evalScore("%s straight flush", 8, (str8top+11)%13+2), nil
+		return es("%s straight flush", 8, (str8top+11)%13+2), nil
 	}
 	if dupes[5] == 1 { // 5-kind
-		return evalScore("%[1]s%[1]s%[1]s%[1]s%[1]s", 9, find(5, ranks, 0)), nil
+		return es("%[1]s%[1]s%[1]s%[1]s%[1]s", 9, find(5, ranks, 0)), nil
 	}
 	return eval{}, fmt.Errorf("failed to eval hand %v", c)
 }
@@ -212,7 +226,7 @@ func EvalToHand3(e int16) ([]Card, bool) {
 // which can be used to rank it against other poker hands.
 // The returned value is in the range 0 to ScoreMax.
 func Eval(c []Card) int16 {
-	ev, _ := evalSlow(c, true)
+	ev, _ := evalSlow(c, true, false)
 	return slowRankToPacked[ev.rank]
 }
 
@@ -310,7 +324,7 @@ func init() {
 						log.Fatalf("failed to create card: %s", err)
 					}
 				}
-				ev, err := evalSlow(hand, true)
+				ev, err := evalSlow(hand, true, false)
 				if err != nil {
 					log.Fatalf("evalSlow(%v) gave error %s", hand, err)
 				}
