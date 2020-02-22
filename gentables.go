@@ -135,7 +135,7 @@ func Tree() *Node {
 	g.wg.Wait()
 	close(g.work)
 	wg.Wait()
-	fmt.Println("nodes created:", len(g.cache))
+	//fmt.Println("nodes created:", len(g.cache))
 	return node
 }
 
