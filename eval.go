@@ -197,7 +197,7 @@ var (
 )
 
 // EvalToHand5 returns an example 5-card hand with the given
-// eval score. The second return value is whether the result is valid.
+// eval score. The xsecond return value is whether the result is valid.
 func EvalToHand5(e int16) ([]Card, bool) {
 	return rankTo5[e], len(rankTo5[e]) != 0
 }

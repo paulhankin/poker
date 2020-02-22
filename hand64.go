@@ -36,6 +36,28 @@ func (h Hand64) CardsN(n int) []Card {
 	return c
 }
 
+// Add adds a card to an n-card hand. The result
+// is a hand with no x-suit cards.
+// The card can't be added if:
+//  - it's already in the hand
+//  - it would result in 5 cards of the same rank in the hand
+func (h Hand64Canonical) Add(n int, c Card) (Hand64, bool) {
+	rc := 0
+	for i := 0; i < n; i++ {
+		ci := Hand64(h).Card(i)
+		if ci == c {
+			return 0, false
+		}
+		if ci.Rank() == c.Rank() {
+			rc++
+		}
+	}
+	if rc >= 4 {
+		return 0, false
+	}
+	return ((h << 8) | Hand64Canonical(c)).Exemplar(n), true
+}
+
 func (h Hand64) String(n int) string {
 	var s []string
 	for i := 0; i < n; i++ {
@@ -49,13 +71,14 @@ func (h Hand64) Card(i int) Card {
 }
 
 type canonSuit struct {
+	s     Suit   // the original suit
 	cards uint16 // bitmap of ranks
 	n     int
 }
 
-// Examplar returns one example hand of n cards that
+// Exemplar returns one example hand of n cards that
 // canonicalizes to h.
-func (hc Hand64Canonical) Examplar(n int) Hand64 {
+func (hc Hand64Canonical) Exemplar(n int) Hand64 {
 	var suits uint
 	h := Hand64(hc)
 	for i := 0; i < n; i++ {
@@ -80,10 +103,21 @@ func (hc Hand64Canonical) Examplar(n int) Hand64 {
 	return h
 }
 
+// SuitTransform represents a mapping of suits to other suits.
+type SuitTransform [4]uint8
+
 // Canonical takes an n-card Hand64, and returns its
 // canonical form.
 func (h Hand64) Canonical(n int) Hand64Canonical {
+	r, _ := h.CanonicalWithTransform(n)
+	return r
+}
+
+func (h Hand64) CanonicalWithTransform(n int) (Hand64Canonical, SuitTransform) {
 	var csuits [4]canonSuit
+	for i := 0; i < 4; i++ {
+		csuits[i].s = Suit(i)
+	}
 	for i := 0; i < n; i++ {
 		ci := h.Card(i)
 		si := ci.Suit()
@@ -125,5 +159,18 @@ func (h Hand64) Canonical(n int) Hand64Canonical {
 			hs = (hs << 8) | Hand64Canonical(card)
 		}
 	}
-	return hs
+	xf := SuitTransform{}
+	for i := 0; i < 4; i++ {
+		if si[i] > 3 {
+			// We remap suits that will be x-suits
+			// into spades. There can never be more than
+			// 3 flushing suits (in a rainbow 3-card hand).
+			// With 4 cards there can be 2 flushing suits,
+			// and with 5 cards only 1 flushing suit.
+			xf[int(csuits[i].s)] = 3
+		} else {
+			xf[int(csuits[i].s)] = uint8(si[i])
+		}
+	}
+	return hs, xf
 }

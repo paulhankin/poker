@@ -79,14 +79,14 @@ func TestCanonical(t *testing.T) {
 			// We also check the examplar of the canonical form works.
 			// We check it doesn't contain any x-suits, and that if we canonicalize
 			// the exemplar, we get the same canonical form back.
-			ex64 := got64c.Examplar(N)
+			ex64 := got64c.Exemplar(N)
 			ex64s := ex64.String(N)
 			if strings.Contains(ex64s, "s") {
-				t.Errorf("%s.Canon().Examplar() = %s, still contains x-suit", tc.hand, ex64s)
+				t.Errorf("%s.Canon().Exemplar() = %s, still contains x-suit", tc.hand, ex64s)
 			}
 			rtCanon := ex64.Canonical(N)
 			if rtCanon != got64c {
-				t.Errorf("%s.Canon().Examplar().Canon() = %s, want %s", tc.hand, Hand64(rtCanon).String(N), got)
+				t.Errorf("%s.Canon().Exemplar().Canon() = %s, want %s", tc.hand, Hand64(rtCanon).String(N), got)
 			}
 		})
 	}
