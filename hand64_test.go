@@ -66,19 +66,27 @@ func TestCanonical(t *testing.T) {
 			if err != nil {
 				t.Fatalf("parseHand(%s) gave error %s", tc.hand, err)
 			}
+			N := len(h0)
 			var h64 Hand64
 			for _, c := range h0 {
 				h64 = (h64 << 8) | Hand64(c)
 			}
-			got64 := Hand64(h64.Canonical(len(h0)))
-			gotCards := got64.CardsN(len(h0))
-			var gotS []string
-			for _, c := range gotCards {
-				gotS = append(gotS, c.String())
-			}
-			got := strings.Join(gotS, " ")
+			got64c := h64.Canonical(N)
+			got := Hand64(got64c).String(len(h0))
 			if got != tc.want {
 				t.Errorf("%s.Canon() = %s, want %s", tc.hand, got, tc.want)
+			}
+			// We also check the examplar of the canonical form works.
+			// We check it doesn't contain any x-suits, and that if we canonicalize
+			// the exemplar, we get the same canonical form back.
+			ex64 := got64c.Examplar(N)
+			ex64s := ex64.String(N)
+			if strings.Contains(ex64s, "s") {
+				t.Errorf("%s.Canon().Examplar() = %s, still contains x-suit", tc.hand, ex64s)
+			}
+			rtCanon := ex64.Canonical(N)
+			if rtCanon != got64c {
+				t.Errorf("%s.Canon().Examplar().Canon() = %s, want %s", tc.hand, Hand64(rtCanon).String(N), got)
 			}
 		})
 	}
