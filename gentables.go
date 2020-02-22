@@ -1,5 +1,7 @@
 package poker
 
+import "fmt"
+
 type Transition struct {
 	rank int16 // for terminal nodes
 	// SX describes how subsequent cards should
@@ -14,7 +16,12 @@ type Node struct {
 	T [52]Transition
 }
 
-func genTree(n int, h Hand64Canonical) *Node {
+func genTree(n int, h Hand64Canonical, cache map[Hand64Canonical]*Node) *Node {
+	key := h | (Hand64Canonical(n) << (64 - 8))
+	if cache[key] != nil {
+		return cache[key]
+	}
+	fmt.Printf("%0*x\n", 2*n, h)
 	node := Node{N: n, H: h}
 	for c := 0; c < 52; c++ {
 		nh, ok := h.Add(n, Card(c))
@@ -32,13 +39,15 @@ func genTree(n int, h Hand64Canonical) *Node {
 		} else {
 			node.T[c] = Transition{
 				SX: xf,
-				N:  genTree(n+1, nhc),
+				N:  genTree(n+1, nhc, cache),
 			}
 		}
 	}
+	cache[key] = &node
 	return &node
 }
 
 func Tree() *Node {
-	return genTree(0, 0)
+	cache := map[Hand64Canonical]*Node{}
+	return genTree(0, 0, cache)
 }
