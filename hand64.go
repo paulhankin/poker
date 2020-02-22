@@ -55,7 +55,7 @@ func (h Hand64Canonical) Add(n int, c Card) (Hand64, bool) {
 	if rc >= 4 {
 		return 0, false
 	}
-	return ((h << 8) | Hand64Canonical(c)).Exemplar(n), true
+	return ((h << 8) | Hand64Canonical(c)).Exemplar(n + 1), true
 }
 
 func (h Hand64) String(n int) string {

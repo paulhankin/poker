@@ -38,7 +38,6 @@ func genTree(n int, h Hand64Canonical, cache map[Hand64Canonical]*Node) *Node {
 	if cache[key] != nil {
 		return cache[key]
 	}
-	fmt.Printf("%0*x\n", 2*n, h)
 	node := Node{N: n, H: h}
 	for c := 0; c < 52; c++ {
 		nh, ok := h.Add(n, Card(c))
@@ -87,7 +86,6 @@ func (g *genner) genworker() {
 			g.wg.Add(-1)
 			continue
 		}
-		fmt.Println(key)
 		node.N = n
 		node.H = h
 		for c := 0; c < 52; c++ {
@@ -95,7 +93,7 @@ func (g *genner) genworker() {
 			if !ok {
 				continue
 			}
-			nhc, xf := nh.CanonicalWithTransform(n)
+			nhc, xf := nh.CanonicalWithTransform(n + 1)
 			if n == 6 {
 				var c7 [7]Card
 				copy(c7[:], nhc.Exemplar(7).CardsN(7))
@@ -105,12 +103,13 @@ func (g *genner) genworker() {
 				}
 			} else {
 				g.wg.Add(1)
-				var nodeChild *Node
-				g.work <- genwork{n: n + 1, h: nhc, node: &nodeChild}
 				node.T[c] = Transition{
 					SX: xf,
-					N:  nodeChild,
 				}
+				work := genwork{n: n + 1, h: nhc, node: &node.T[c].N}
+				go func() {
+					g.work <- work
+				}()
 			}
 		}
 		g.wg.Add(-1)
@@ -120,7 +119,7 @@ func (g *genner) genworker() {
 func Tree() *Node {
 	g := &genner{
 		cache: map[Hand64Canonical]*Node{},
-		work:  make(chan genwork, 10000000),
+		work:  make(chan genwork, 10_000_000),
 	}
 	g.wg.Add(1)
 	for i := 0; i < runtime.NumCPU(); i++ {
@@ -132,5 +131,6 @@ func Tree() *Node {
 	g.work <- genwork{node: &node}
 	g.wg.Wait()
 	close(g.work)
+	fmt.Println("nodes created:", len(g.cache))
 	return node
 }
