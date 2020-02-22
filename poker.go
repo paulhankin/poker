@@ -8,17 +8,31 @@ import (
 
 // A Card is a single playing card. It's represented as a
 // number from 0 to 51. The bottom two bits are the suit.
+//
+// In some cases, a special "x" suit is used, which represents
+// some anonymized suit. This x is used in hand64 when canonicalizing
+// hands. The choice of "x" in a hand has constraints: each
+// card must be a suit different from the named suits in a hand,
+// two cards of the same rank with x-suit must have different
+// suits, and there can't be too many cards of the same suit, so that
+// if you add 7-N more cards of that suit, then there can't be a flush
+// in that suit.
+// Eg: in KhQhTx8x, the T, 8 must be different non-heart suits.
+// In AxKxQxJx, all four cards must be different suits.
 type Card uint8
 
 // Suit returns the suit of a card.
 func (c Card) Suit() Suit {
+	if c > 127 {
+		return XSuit
+	}
 	return Suit(c & 3)
 }
 
 // Rank returns the rank of a card. It returns 0
 // if the card isn't valid.
 func (c Card) Rank() Rank {
-	r := Rank(c>>2) + 1
+	r := (0xf & Rank(c>>2)) + 1
 	if r > 13 {
 		return 0
 	}
@@ -49,6 +63,7 @@ const (
 	Heart   = Suit(2)
 	Spade   = Suit(3)
 
+	XSuit   = Suit(254)
 	BadSuit = Suit(255)
 )
 
@@ -57,6 +72,7 @@ var suits = map[Suit]string{
 	Diamond: "D",
 	Heart:   "H",
 	Spade:   "S",
+	XSuit:   "x",
 }
 
 func (s Suit) String() string {
