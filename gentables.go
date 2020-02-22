@@ -134,3 +134,16 @@ func Tree() *Node {
 	fmt.Println("nodes created:", len(g.cache))
 	return node
 }
+
+func NodeEval7(node *Node, hand *[7]Card) int16 {
+	tx := SuitTransform{0, 1, 2, 3}
+	t := node.T[hand[0]]
+	tx = tx.Compose(t.SX)
+	node = t.N
+	for i := 1; i < 6; i++ {
+		t = node.T[tx.Apply(hand[i])]
+		tx = tx.Compose(t.SX)
+		node = t.N
+	}
+	return node.T[tx.Apply(hand[6])].rank
+}

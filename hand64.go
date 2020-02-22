@@ -106,6 +106,17 @@ func (hc Hand64Canonical) Exemplar(n int) Hand64 {
 // SuitTransform represents a mapping of suits to other suits.
 type SuitTransform [4]uint8
 
+// Compose generates a suit transform that performs one suit transform after another.
+// st.Compose(st2) applied to a suit s is the same as applying st first,
+// and then st2 to the result.
+func (st SuitTransform) Compose(st2 SuitTransform) SuitTransform {
+	return SuitTransform{st2[st[0]], st2[st[1]], st2[st[2]], st2[st[3]]}
+}
+
+func (st SuitTransform) Apply(c Card) Card {
+	return Card(st[c&3]) | (c &^ 3)
+}
+
 // Canonical takes an n-card Hand64, and returns its
 // canonical form.
 func (h Hand64) Canonical(n int) Hand64Canonical {
