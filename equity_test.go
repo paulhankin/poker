@@ -29,7 +29,6 @@ func parseHand2(s string) ([2]Card, error) {
 }
 
 func TestEquity(t *testing.T) {
-	t.Skip("slow for now")
 	hand := func(s string) [2]Card {
 		h, err := parseHand2(s)
 		if err != nil {

@@ -122,28 +122,44 @@ func Tree() *Node {
 		work:  make(chan genwork, 10_000_000),
 	}
 	g.wg.Add(1)
+	var wg sync.WaitGroup
 	for i := 0; i < runtime.NumCPU(); i++ {
+		wg.Add(1)
 		go func() {
 			g.genworker()
+			wg.Done()
 		}()
 	}
 	node := &Node{}
 	g.work <- genwork{node: &node}
 	g.wg.Wait()
 	close(g.work)
+	wg.Wait()
 	fmt.Println("nodes created:", len(g.cache))
 	return node
 }
 
-func NodeEval7(node *Node, hand *[7]Card) int16 {
+var (
+	rootNode     *Node
+	rootNodeInit sync.Once
+)
+
+func RootNode() *Node {
+	rootNodeInit.Do(func() {
+		rootNode = Tree()
+	})
+	return rootNode
+}
+
+func NodeEval7(hand *[7]Card) int16 {
+	node := RootNode()
 	tx := SuitTransform{0, 1, 2, 3}
-	t := node.T[hand[0]]
-	tx = tx.Compose(t.SX)
-	node = t.N
-	for i := 1; i < 6; i++ {
+	var t Transition
+	for i := 0; i < 6; i++ {
 		t = node.T[tx.Apply(hand[i])]
 		tx = tx.Compose(t.SX)
 		node = t.N
 	}
-	return node.T[tx.Apply(hand[6])].rank
+	rank := node.T[tx.Apply(hand[6])].rank
+	return rank
 }

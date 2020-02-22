@@ -9,7 +9,6 @@ type tableTestCase struct {
 }
 
 func TestTables(t *testing.T) {
-	root := Tree()
 	tcs := []tableTestCase{
 		{hand: "HK DK S2 D3 CQ DJ D7"},
 		{hand: "SA HA DA DK HK SQ CA"},
@@ -25,7 +24,7 @@ func TestTables(t *testing.T) {
 			}
 			var cards [7]Card
 			copy(cards[:], h)
-			gotRank := NodeEval7(root, &cards)
+			gotRank := NodeEval7(&cards)
 			wantRank := Eval7(&cards)
 			if gotRank != wantRank {
 				t.Errorf("NodeEval7() = %d, want %d", gotRank, wantRank)
