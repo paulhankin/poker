@@ -31,7 +31,7 @@ func TestEval5Single(t *testing.T) {
 				p /= (5 - i)
 			}
 			gotEval := NodeEval5(&cards)
-			wantEval := Eval(cards[:])
+			wantEval := EvalSlow(cards[:])
 			if gotEval != wantEval {
 				t.Errorf("%v.NodeEval() = %d, want %d", cards[:], gotEval, wantEval)
 				t.Errorf("... hand evaluated to %v", evalInfo.rankTo5[gotEval])
@@ -50,7 +50,7 @@ func TestEval5(t *testing.T) {
 			for c := Card(b) + 1; c < Card(52); c++ {
 				for d := Card(c) + 1; d < Card(52); d++ {
 					for e := Card(d) + 1; e < Card(52); e++ {
-						wantEval := Eval([]Card{a, b, c, d, e})
+						wantEval := EvalSlow([]Card{a, b, c, d, e})
 						for perms := 0; perms < 120; perms += 10 {
 							p := perms
 							h := [5]Card{a, b, c, d, e}
@@ -59,7 +59,7 @@ func TestEval5(t *testing.T) {
 								h[i], h[i+perms%(5-i)] = h[i+perms%(5-i)], h[i]
 								p /= (5 - i)
 							}
-							gotEval := NodeEval5(&h)
+							gotEval := Eval5(&h)
 							if gotEval != wantEval {
 								if fails >= failThreshold && rand.Intn(failSample) != 0 {
 									fails++
@@ -70,7 +70,7 @@ func TestEval5(t *testing.T) {
 									t.Errorf("[skipped reporting %d failures]", skipped)
 									skipped = 0
 								}
-								t.Errorf("%v.NodeEval() = %d, want %d", h[:], gotEval, wantEval)
+								t.Errorf("%v.Eval() = %d, want %d", h[:], gotEval, wantEval)
 								t.Errorf("... hand evaluated to %v", evalInfo.rankTo5[gotEval])
 								fails++
 								if fails == failThreshold {
@@ -88,6 +88,28 @@ func TestEval5(t *testing.T) {
 	}
 }
 
+func BenchmarkEval5(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var T int64
+		for a := Card(0); a < Card(52); a++ {
+			for b := Card(a) + 1; b < Card(52); b++ {
+				for c := Card(b) + 1; c < Card(52); c++ {
+					for d := Card(c) + 1; d < Card(52); d++ {
+						for e := Card(d) + 1; e < Card(52); e++ {
+							h := [5]Card{a, b, c, d, e}
+							T += int64(Eval5(&h))
+						}
+					}
+				}
+			}
+		}
+		// make sure we're not optimizing the code away.
+		if T == 0 {
+			panic("x")
+		}
+	}
+}
+
 func TestTables(t *testing.T) {
 	tcs := []tableTestCase{
 		{hand: "HK DK S2 D3 CQ DJ D7"},
@@ -97,18 +119,16 @@ func TestTables(t *testing.T) {
 		{hand: "SA SK SQ CJ ST S9 S8"},
 	}
 	for _, tc := range tcs {
-		t.Run(tc.hand, func(t *testing.T) {
-			h, err := parseHand(tc.hand)
-			if err != nil {
-				t.Fatal(err)
-			}
-			var cards [7]Card
-			copy(cards[:], h)
-			gotRank := NodeEval7(&cards)
-			wantRank := Eval7(&cards)
-			if gotRank != wantRank {
-				t.Errorf("NodeEval7() = %d, want %d", gotRank, wantRank)
-			}
-		})
+		h, err := parseHand(tc.hand)
+		if err != nil {
+			t.Fatalf("%s: parseHand failed: %v", tc.hand, err)
+		}
+		var cards [7]Card
+		copy(cards[:], h)
+		gotRank := NodeEval7(&cards)
+		wantRank := EvalSlow7(&cards)
+		if gotRank != wantRank {
+			t.Errorf("%s: NodeEval7() = %d, want %d", tc.hand, gotRank, wantRank)
+		}
 	}
 }

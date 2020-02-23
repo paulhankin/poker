@@ -15,9 +15,10 @@ type Transition struct {
 }
 
 type Node struct {
-	N int // number of cards
-	H Hand64Canonical
-	T [52]Transition
+	Index int
+	N     int // number of cards
+	H     Hand64Canonical
+	T     [52]Transition
 }
 
 type genwork struct {
@@ -40,14 +41,14 @@ func (g *genner) get(key Hand64Canonical) (*Node, bool) {
 	if ok {
 		return n, true
 	}
-	n = &Node{}
+	n = &Node{Index: len(g.cache)}
 	g.cache[key] = n
 	return n, false
 }
 
 func nodeeval5idx(c *[7]Card, idx [5]int) int16 {
 	h := [5]Card{c[idx[0]], c[idx[1]], c[idx[2]], c[idx[3]], c[idx[4]]}
-	return NodeEval5(&h)
+	return Eval5(&h)
 }
 
 func gentreeEval7(c *[7]Card) int16 {
@@ -111,7 +112,7 @@ func (g *genner) genworker(ncards int) {
 				} else if ncards == 5 {
 					var c5 [5]Card
 					copy(c5[:], nhc.Exemplar(5).CardsN(5))
-					rank = Eval5(&c5)
+					rank = EvalSlow5(&c5)
 					if c5[0] == c5[1] && c5[0] == c5[2] && c5[0] == c5[3] {
 						fmt.Printf("nhc: %s, c5: %v, rank:%d\n", Hand64(nhc).String(5), c5[:], rank)
 					}
@@ -157,13 +158,31 @@ func gentree(ncards int) *Node {
 	g.wg.Wait()
 	close(g.work)
 	wg.Wait()
+
+	if ncards == 5 {
+		for _, node := range g.cache {
+			table := rootNode5table[node.Index*52 : (node.Index+1)*52]
+			if node.N == 4 {
+				for i, t := range node.T {
+					table[i] = uint32(t.rank)
+				}
+			} else {
+				for i, t := range node.T {
+					if t.N != nil {
+						table[i] = (uint32(t.N.Index*52) << 8) | uint32(t.SX.Byte())
+					}
+				}
+			}
+		}
+	}
+
 	fmt.Println("nodes created for", ncards, "cards:", len(g.cache))
 	return node
 }
 
 var (
-	rootNode5card     *Node
-	rootNode5cardInit sync.Once
+	rootNode5card  *Node
+	rootNode5table [3459 * 52]uint32
 
 	rootNode7card     *Node
 	rootNode7cardInit sync.Once
@@ -176,10 +195,11 @@ func rootNode7() *Node {
 	return rootNode7card
 }
 
+func init() {
+	rootNode5card = gentree(5)
+}
+
 func rootNode5() *Node {
-	rootNode5cardInit.Do(func() {
-		rootNode5card = gentree(5)
-	})
 	return rootNode5card
 }
 
@@ -207,4 +227,28 @@ func NodeEval5(hand *[5]Card) int16 {
 	}
 	rank := node.T[tx.Apply(hand[4])].rank
 	return rank
+}
+
+func Eval5(hand *[5]Card) int16 {
+	idx := 0
+	tx := SuitTransformByteIdentity
+	var v uint32
+
+	v = rootNode5table[idx+int(tx.Apply(hand[0]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode5table[idx+int(tx.Apply(hand[1]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode5table[idx+int(tx.Apply(hand[2]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode5table[idx+int(tx.Apply(hand[3]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	return int16(rootNode5table[idx+int(tx.Apply(hand[4]))])
 }

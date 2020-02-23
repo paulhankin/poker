@@ -153,7 +153,7 @@ func TestRankings(t *testing.T) {
 		if err != nil {
 			t.Fatalf("parseHand(%s) gave error %s", hands[i], err)
 		}
-		ev := Eval(h0)
+		ev := EvalSlow(h0)
 		if ev >= prevEV {
 			t.Errorf("Expected %s to beat %s, but got scores %d and %d", prevHand, hands[i], prevEV, ev)
 		}
@@ -213,12 +213,12 @@ func TestToHand(t *testing.T) {
 		h1 := []Card{}
 		ok := false
 		if len(h0) == 3 {
-			h1, ok = EvalToHand3(Eval(h0))
+			h1, ok = EvalToHand3(EvalSlow(h0))
 		} else {
-			h1, ok = EvalToHand5(Eval(h0))
+			h1, ok = EvalToHand5(EvalSlow(h0))
 		}
 		if !ok {
-			t.Fatalf("EvalToHand(%s) failed. Eval=%d", h0, Eval(h0))
+			t.Fatalf("EvalToHand(%s) failed. Eval=%d", h0, EvalSlow(h0))
 		}
 		want, err := DescribeShort(h0)
 		if err != nil {

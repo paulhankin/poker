@@ -146,6 +146,7 @@ func (hc Hand64Canonical) Exemplar(n int) Hand64 {
 
 // SuitTransform represents a mapping of suits to other suits.
 type SuitTransform [4]uint8
+type SuitTransformByte uint8
 
 // Compose generates a suit transform that performs one suit transform after another.
 // st.Compose(st2) applied to a suit s is the same as applying st first,
@@ -153,6 +154,32 @@ type SuitTransform [4]uint8
 func (st SuitTransform) Compose(st2 SuitTransform) SuitTransform {
 	return SuitTransform{st2[st[0]], st2[st[1]], st2[st[2]], st2[st[3]]}
 }
+
+func (st SuitTransform) Byte() SuitTransformByte {
+	if st[0] > 3 || st[1] > 3 || st[2] > 3 || st[3] > 3 {
+		log.Fatalf("can't transform suit transform %v to byte", st[:])
+	}
+	return SuitTransformByte(st[0] | (st[1] << 2) | (st[2] << 4) | (st[3] << 6))
+}
+
+func (st SuitTransformByte) Apply(c Card) Card {
+	return Card(st>>(2*(c&3))&3) | (c &^ 3)
+}
+
+func (st SuitTransformByte) Compose(st2 SuitTransformByte) SuitTransformByte {
+	var r SuitTransformByte
+	r = (st2 >> (2 * (st & 3))) & 3
+	r |= ((st2 >> (2 * ((st >> 2) & 3))) & 3) << 2
+	r |= ((st2 >> (2 * ((st >> 4) & 3))) & 3) << 4
+	r |= ((st2 >> (2 * ((st >> 6) & 3))) & 3) << 6
+	return r
+}
+
+func (st SuitTransformByte) Long() SuitTransform {
+	return SuitTransform{uint8(st & 3), uint8((st >> 2) & 3), uint8((st >> 4) & 3), uint8((st >> 6) & 3)}
+}
+
+var SuitTransformByteIdentity = SuitTransform{0, 1, 2, 3}.Byte()
 
 func (st SuitTransform) Apply(c Card) Card {
 	return Card(st[c&3]) | (c &^ 3)

@@ -109,33 +109,71 @@ func TestCanonical(t *testing.T) {
 		{hand: "H5 H2 H3", want: "C5 C3 C2"},
 	}
 	for _, tc := range tcs {
-		t.Run(fmt.Sprintf("%s.Canon() = %s", tc.hand, tc.want), func(t *testing.T) {
-			h0, err := parseHand(tc.hand)
-			if err != nil {
-				t.Fatalf("parseHand(%s) gave error %s", tc.hand, err)
+		head := fmt.Sprintf("%s.Canon()=%s", tc.hand, tc.want)
+		h0, err := parseHand(tc.hand)
+		if err != nil {
+			t.Fatalf("%s: parseHand(%s) gave error %s", head, tc.hand, err)
+		}
+		N := len(h0)
+		var h64 Hand64
+		for _, c := range h0 {
+			h64 = (h64 << 8) | Hand64(c)
+		}
+		got64c := h64.Canonical(N, 7)
+		got := Hand64(got64c).String(len(h0))
+		if got != tc.want {
+			t.Errorf("%s: %s.Canon() = %s, want %s", head, tc.hand, got, tc.want)
+		}
+		// We also check the examplar of the canonical form works.
+		// We check it doesn't contain any x-suits, and that if we canonicalize
+		// the exemplar, we get the same canonical form back.
+		ex64 := got64c.Exemplar(N)
+		ex64s := ex64.String(N)
+		if strings.Contains(ex64s, "s") {
+			t.Errorf("%s: %s.Canon().Exemplar() = %s, still contains x-suit", head, tc.hand, ex64s)
+		}
+		rtCanon := ex64.Canonical(N, 7)
+		if rtCanon != got64c {
+			t.Errorf("%s: %s.Canon().Exemplar().Canon() = %s, want %s", head, tc.hand, Hand64(rtCanon).String(N), got)
+		}
+	}
+}
+
+func TestSuitTransformApply(t *testing.T) {
+	for i := 0; i < 256; i++ {
+		for c := Card(0); c < 52; c++ {
+			stb := SuitTransformByte(i)
+			stl := stb.Long()
+			if stl.Byte() != stb {
+				t.Errorf("%08b.Long() = %v.Byte() = %08b, want %08b", stb, stl, stl.Byte(), stb)
 			}
-			N := len(h0)
-			var h64 Hand64
-			for _, c := range h0 {
-				h64 = (h64 << 8) | Hand64(c)
+			c2b := stb.Apply(c)
+			c2l := stl.Apply(c)
+			if c2b != c2l {
+				t.Errorf("%08b.Apply(%s) = %s, want %s", stb, c, c2b, c2l)
 			}
-			got64c := h64.Canonical(N, 7)
-			got := Hand64(got64c).String(len(h0))
-			if got != tc.want {
-				t.Errorf("%s.Canon() = %s, want %s", tc.hand, got, tc.want)
+		}
+	}
+}
+
+func TestSuitTransformCompose(t *testing.T) {
+	for i := 0; i < 256; i++ {
+		stbi := SuitTransformByte(i)
+		stli := stbi.Long()
+		if stli.Byte() != stbi {
+			t.Fatalf("failed to roundtrip %x", i)
+		}
+		for j := 0; j < 256; j++ {
+			stbj := SuitTransformByte(j)
+			stlj := stbj.Long()
+			if stlj.Byte() != stbj {
+				t.Fatalf("failed to roundtrip %x", j)
 			}
-			// We also check the examplar of the canonical form works.
-			// We check it doesn't contain any x-suits, and that if we canonicalize
-			// the exemplar, we get the same canonical form back.
-			ex64 := got64c.Exemplar(N)
-			ex64s := ex64.String(N)
-			if strings.Contains(ex64s, "s") {
-				t.Errorf("%s.Canon().Exemplar() = %s, still contains x-suit", tc.hand, ex64s)
+			got := stbi.Compose(stbj)
+			want := stli.Compose(stlj).Byte()
+			if got != want {
+				t.Errorf("%08b.Compose(%08b) = %08b, want %08b", stbi, stbj, got, want)
 			}
-			rtCanon := ex64.Canonical(N, 7)
-			if rtCanon != got64c {
-				t.Errorf("%s.Canon().Exemplar().Canon() = %s, want %s", tc.hand, Hand64(rtCanon).String(N), got)
-			}
-		})
+		}
 	}
 }

@@ -135,6 +135,8 @@ func poptop(x uint16) (int, uint16) {
 // deck (for example: the kickers with trip aces don't matter).
 //
 // This function is used to build tables for fast hand evaluation.
+// It's slow, but a little bit optimized so that the table construction
+// is relatively fast.
 func evalSlow(c []Card, replace, text bool) (eval, error) {
 	if len(c) == 7 {
 		return evalSlow7(c, replace, text)
@@ -333,22 +335,22 @@ func EvalToHand3(e int16) ([]Card, bool) {
 	return evalInfo.rankTo3[e], len(evalInfo.rankTo3[e]) != 0
 }
 
-// Eval takes a 3- or 5- card poker hand and returns a number
+// EvalSlow takes a 3-, 5- or 7- card poker hand and returns a number
 // which can be used to rank it against other poker hands.
 // The returned value is in the range 0 to ScoreMax.
-func Eval(c []Card) int16 {
+func EvalSlow(c []Card) int16 {
 	ev, _ := evalSlow(c, true, false)
 	return evalInfo.slowRankToPacked[ev.rank]
 }
 
 func eval5idx(c *[7]Card, idx [5]int) int16 {
 	h := [5]Card{c[idx[0]], c[idx[1]], c[idx[2]], c[idx[3]], c[idx[4]]}
-	return Eval(h[:])
+	return EvalSlow(h[:])
 }
 
-// Eval7 returns the ranking of the best 5-card hand
+// EvalSlow7 returns the ranking of the best 5-card hand
 // that's a subset of the given 7 cards.
-func Eval7(c *[7]Card) int16 {
+func EvalSlow7(c *[7]Card) int16 {
 	idx := [5]int{4, 3, 2, 1, 0}
 	var best int16
 	for {
@@ -381,14 +383,14 @@ func Eval7(c *[7]Card) int16 {
 	}
 }
 
-// Eval5 is an optimized version of Eval which requires a 5-card hand.
-func Eval5(c *[5]Card) int16 {
-	return Eval(c[:])
+// EvalSlow5 is an optimized version of EvalSlow which requires a 5-card hand.
+func EvalSlow5(c *[5]Card) int16 {
+	return EvalSlow(c[:])
 }
 
-// Eval3 is an optimized version of Eval which requires a 3-card hand.
-func Eval3(c *[3]Card) int16 {
-	return Eval(c[:])
+// EvalSlow3 is an optimized version of EvalSlow which requires a 3-card hand.
+func EvalSlow3(c *[3]Card) int16 {
+	return EvalSlow(c[:])
 }
 
 func nextIdx(ix []int, k int, dupes int) bool {
