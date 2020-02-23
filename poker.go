@@ -4,6 +4,7 @@ package poker
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 // A Card is a single playing card. It's represented as a
@@ -20,6 +21,16 @@ import (
 // Eg: in KhQhTx8x, the T, 8 must be different non-heart suits.
 // In AxKxQxJx, all four cards must be different suits.
 type Card uint8
+
+type Hand []Card
+
+func (h Hand) String() string {
+	var parts []string
+	for _, c := range h {
+		parts = append(parts, c.String())
+	}
+	return strings.Join(parts, " ")
+}
 
 // Suit returns the suit of a card.
 func (c Card) Suit() Suit {
@@ -94,10 +105,6 @@ func (r Rank) String() string {
 	return "A23456789TJQK"[r-1 : r]
 }
 
-var primes = []uint16{
-	2, 3, 5, 7, 11, 13, 17, 23, 29, 31, 37, 41, 43,
-}
-
 // MakeCard constructs a card from a suit and rank.
 func MakeCard(s Suit, r Rank) (Card, error) {
 	if s > 3 || r == 0 || r > 13 {
@@ -107,12 +114,14 @@ func MakeCard(s Suit, r Rank) (Card, error) {
 }
 
 // NameToCard maps card names (for example, "C8" or "HA") to a card value.
-var NameToCard = map[string]Card{}
+var NameToCard map[string]Card
 
 // Cards is a full deck of all cards. Sorted by suit and then rank.
-var Cards []Card
+var Cards = makeCards()
 
-func init() {
+func makeCards() []Card {
+	NameToCard = map[string]Card{}
+	var cards []Card
 	for s := Suit(0); s <= Suit(3); s++ {
 		for r := Rank(1); r <= Rank(13); r++ {
 			c, err := MakeCard(s, r)
@@ -120,7 +129,8 @@ func init() {
 				log.Fatalf("Cards construction failed: %s", err)
 			}
 			NameToCard[c.String()] = c
-			Cards = append(Cards, c)
+			cards = append(cards, c)
 		}
 	}
+	return cards
 }

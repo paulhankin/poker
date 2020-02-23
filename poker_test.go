@@ -79,10 +79,10 @@ func TestDescriptions(t *testing.T) {
 			}
 			ld, err := Describe(h0)
 			if err != nil {
-				t.Fatalf("Describe(%s) produced an error: %s", h0, err)
+				t.Fatalf("Describe(%s) produced an error: %s", Hand(h0), err)
 			}
 			if ld != hands[i].wantLong {
-				t.Errorf("Describe(%s) = %s, want %s", h0, ld, hands[i].wantLong)
+				t.Errorf("Describe(%s) = %s, want %s", Hand(h0), ld, hands[i].wantLong)
 			}
 			wantShort := hands[i].wantShort
 			if wantShort == "" {
@@ -90,10 +90,10 @@ func TestDescriptions(t *testing.T) {
 			}
 			sd, err := DescribeShort(h0)
 			if err != nil {
-				t.Fatalf("DescribeShort(%s) produced an error: %s", h0, err)
+				t.Fatalf("DescribeShort(%s) produced an error: %s", Hand(h0), err)
 			}
 			if sd != wantShort {
-				t.Errorf("DescribeShort(%s) = %s, want %s", h0, sd, wantShort)
+				t.Errorf("DescribeShort(%s) = %s, want %s", Hand(h0), sd, wantShort)
 			}
 		}
 	}

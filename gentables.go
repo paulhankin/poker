@@ -1,7 +1,6 @@
 package poker
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 )
@@ -102,10 +101,10 @@ func (g *genner) genworker() {
 					rank: rank,
 				}
 			} else {
-				g.wg.Add(1)
 				node.T[c] = Transition{
 					SX: xf,
 				}
+				g.wg.Add(1)
 				work := genwork{n: n + 1, h: nhc, node: &node.T[c].N}
 				go func() {
 					g.work <- work
@@ -116,7 +115,7 @@ func (g *genner) genworker() {
 	}
 }
 
-func Tree() *Node {
+func tree7() *Node {
 	g := &genner{
 		cache: map[Hand64Canonical]*Node{},
 		work:  make(chan genwork, 10_000_000),
@@ -144,15 +143,15 @@ var (
 	rootNodeInit sync.Once
 )
 
-func RootNode() *Node {
+func rootNode7() *Node {
 	rootNodeInit.Do(func() {
-		rootNode = Tree()
+		rootNode = tree7()
 	})
 	return rootNode
 }
 
 func NodeEval7(hand *[7]Card) int16 {
-	node := RootNode()
+	node := rootNode7()
 	tx := SuitTransform{0, 1, 2, 3}
 	var t Transition
 	for i := 0; i < 6; i++ {

@@ -110,18 +110,50 @@ func DescribeShort(c []Card) (string, error) {
 }
 
 func evalSlow7(c []Card, replace, text bool) (eval, error) {
-	var h [7]Card
-	copy(h[:], c)
-	rank := Eval7(&h)
-	hand, ok := EvalToHand5(rank)
-	if !ok {
-		return eval{}, fmt.Errorf("failed to construct 5-card best hand from %s", c)
+	idx := [5]int{4, 3, 2, 1, 0}
+	var bestEval eval
+	var bestHand [5]Card
+	for {
+		h := [5]Card{c[idx[0]], c[idx[1]], c[idx[2]], c[idx[3]], c[idx[4]]}
+		ev, err := evalSlow(h[:], replace, false)
+		if err != nil {
+			return eval{}, err
+		}
+		if ev.rank > bestEval.rank {
+			bestEval = ev
+			bestHand = h
+		}
+		if idx[0] < 6 {
+			idx[0]++
+		} else if idx[1] < 5 {
+			idx[1]++
+			idx[0] = idx[1] + 1
+		} else if idx[2] < 4 {
+			idx[2]++
+			idx[1] = idx[2] + 1
+			idx[0] = idx[1] + 1
+		} else if idx[3] < 3 {
+			idx[3]++
+			idx[2] = idx[3] + 1
+			idx[1] = idx[2] + 1
+			idx[0] = idx[1] + 1
+		} else if idx[4] < 2 {
+			idx[4]++
+			idx[3] = idx[4] + 1
+			idx[2] = idx[3] + 1
+			idx[1] = idx[2] + 1
+			idx[0] = idx[1] + 1
+		} else {
+			var err error
+			if text {
+				bestEval, err = evalSlow(bestHand[:], replace, true)
+			}
+			return bestEval, err
+		}
 	}
-	return evalSlow(hand, replace, text)
-
 }
 
-// evalSlow evaluates a 3- or 5- or 7- card poker hand.
+// evalSlow evaluates a 3- or 5- card poker hand.
 // The result is a number which can be compared
 // with other hand's evaluations to correctly rank them as poker
 // hands.
@@ -205,21 +237,30 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 // ScoreMax is the largest possible result from Eval (with replace=true).
 const ScoreMax = 7929
 
-var (
-	rankTo5 = map[int16][]Card{}
-	rankTo3 = map[int16][]Card{}
-)
+type evalInfos struct {
+	rankTo5          [ScoreMax + 1][]Card
+	rankTo3          [ScoreMax + 1][]Card
+	slowRankToPacked map[int]int16
+}
+
+var evalInfo *evalInfos = makeEvalInfo()
 
 // EvalToHand5 returns an example 5-card hand with the given
 // eval score. The xsecond return value is whether the result is valid.
 func EvalToHand5(e int16) ([]Card, bool) {
-	return rankTo5[e], len(rankTo5[e]) != 0
+	if e < 0 || e > ScoreMax {
+		return nil, false
+	}
+	return evalInfo.rankTo5[e], len(evalInfo.rankTo5[e]) != 0
 }
 
 // EvalToHand3 returns an example 3-card hand with the given
 // eval score. The second return value is whether the result is valid.
 func EvalToHand3(e int16) ([]Card, bool) {
-	return rankTo3[e], len(rankTo3[e]) != 0
+	if e < 0 || e > ScoreMax {
+		return nil, false
+	}
+	return evalInfo.rankTo3[e], len(evalInfo.rankTo3[e]) != 0
 }
 
 // Eval takes a 3- or 5- card poker hand and returns a number
@@ -227,7 +268,7 @@ func EvalToHand3(e int16) ([]Card, bool) {
 // The returned value is in the range 0 to ScoreMax.
 func Eval(c []Card) int16 {
 	ev, _ := evalSlow(c, true, false)
-	return slowRankToPacked[ev.rank]
+	return evalInfo.slowRankToPacked[ev.rank]
 }
 
 func eval5idx(c *[7]Card, idx [5]int) int16 {
@@ -292,9 +333,9 @@ func nextIdx(ix []int, k int, dupes int) bool {
 	}
 }
 
-var slowRankToPacked map[int]int16
+func makeEvalInfo() *evalInfos {
+	ei := &evalInfos{}
 
-func init() {
 	uniqScores := map[int]bool{}
 	hand5, hand3 := map[int][]Card{}, map[int][]Card{}
 	for _, size := range []int{3, 5} {
@@ -347,16 +388,17 @@ func init() {
 	}
 	sort.Ints(allScores)
 
-	slowRankToPacked = map[int]int16{}
+	ei.slowRankToPacked = map[int]int16{}
 	for i, k := range allScores {
-		slowRankToPacked[k] = int16(i)
+		ei.slowRankToPacked[k] = int16(i)
 	}
 
-	for rank, packedRank := range slowRankToPacked {
-		rankTo5[packedRank] = hand5[rank]
-		rankTo3[packedRank] = hand3[rank]
+	for rank, packedRank := range ei.slowRankToPacked {
+		ei.rankTo5[packedRank] = hand5[rank]
+		ei.rankTo3[packedRank] = hand3[rank]
 	}
 	if ScoreMax != len(allScores)-1 {
 		log.Fatalf("Expected max score of %d, but found %d", ScoreMax, len(allScores)-1)
 	}
+	return ei
 }
