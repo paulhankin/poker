@@ -113,9 +113,6 @@ func (g *genner) genworker(ncards int) {
 					var c5 [5]Card
 					copy(c5[:], nhc.Exemplar(5).CardsN(5))
 					rank = EvalSlow5(&c5)
-					if c5[0] == c5[1] && c5[0] == c5[2] && c5[0] == c5[3] {
-						fmt.Printf("nhc: %s, c5: %v, rank:%d\n", Hand64(nhc).String(5), c5[:], rank)
-					}
 				} else {
 					panic(ncards)
 				}
@@ -159,18 +156,22 @@ func gentree(ncards int) *Node {
 	close(g.work)
 	wg.Wait()
 
+	var indextable []uint32
 	if ncards == 5 {
-		for _, node := range g.cache {
-			table := rootNode5table[node.Index*52 : (node.Index+1)*52]
-			if node.N == 4 {
-				for i, t := range node.T {
-					table[i] = uint32(t.rank)
-				}
-			} else {
-				for i, t := range node.T {
-					if t.N != nil {
-						table[i] = (uint32(t.N.Index*52) << 8) | uint32(t.SX.Byte())
-					}
+		indextable = rootNode5table[:]
+	} else if ncards == 7 {
+		indextable = rootNode7table[:]
+	}
+	for _, node := range g.cache {
+		table := indextable[node.Index*52 : (node.Index+1)*52]
+		if node.N == ncards-1 {
+			for i, t := range node.T {
+				table[i] = uint32(t.rank)
+			}
+		} else {
+			for i, t := range node.T {
+				if t.N != nil {
+					table[i] = (uint32(t.N.Index*52) << 8) | uint32(t.SX.Byte())
 				}
 			}
 		}
@@ -185,6 +186,7 @@ var (
 	rootNode5table [3459 * 52]uint32
 
 	rootNode7card     *Node
+	rootNode7table    [163060 * 52]uint32
 	rootNode7cardInit sync.Once
 )
 
@@ -201,6 +203,10 @@ func init() {
 
 func rootNode5() *Node {
 	return rootNode5card
+}
+
+func init() {
+	rootNode7()
 }
 
 func NodeEval7(hand *[7]Card) int16 {
@@ -251,4 +257,36 @@ func Eval5(hand *[5]Card) int16 {
 	idx = int(v >> 8)
 
 	return int16(rootNode5table[idx+int(tx.Apply(hand[4]))])
+}
+
+func Eval7(hand *[7]Card) int16 {
+	idx := 0
+	tx := SuitTransformByteIdentity
+	var v uint32
+
+	v = rootNode7table[idx+int(tx.Apply(hand[0]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode7table[idx+int(tx.Apply(hand[1]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode7table[idx+int(tx.Apply(hand[2]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode7table[idx+int(tx.Apply(hand[3]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode7table[idx+int(tx.Apply(hand[4]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	v = rootNode7table[idx+int(tx.Apply(hand[5]))]
+	tx = tx.Compose(SuitTransformByte(v))
+	idx = int(v >> 8)
+
+	return int16(rootNode7table[idx+int(tx.Apply(hand[6]))])
 }

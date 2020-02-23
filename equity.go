@@ -26,7 +26,7 @@ func holdemRiverEquities(hbs [][7]Card, evs []int16, eqs []Equity) {
 	winCount := 0
 	var bestEV int16 = -1000
 	for i := 0; i < H; i++ {
-		ev := NodeEval7(&hbs[i])
+		ev := Eval7(&hbs[i])
 		evs[i] = ev
 		if ev > bestEV {
 			winCount = 1

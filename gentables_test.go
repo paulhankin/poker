@@ -111,6 +111,7 @@ func BenchmarkEval5(b *testing.B) {
 }
 
 func TestTables(t *testing.T) {
+	rootNode7()
 	tcs := []tableTestCase{
 		{hand: "HK DK S2 D3 CQ DJ D7"},
 		{hand: "SA HA DA DK HK SQ CA"},
@@ -125,10 +126,10 @@ func TestTables(t *testing.T) {
 		}
 		var cards [7]Card
 		copy(cards[:], h)
-		gotRank := NodeEval7(&cards)
+		gotRank := Eval7(&cards)
 		wantRank := EvalSlow7(&cards)
 		if gotRank != wantRank {
-			t.Errorf("%s: NodeEval7() = %d, want %d", tc.hand, gotRank, wantRank)
+			t.Errorf("%s: Eval7() = %d, want %d", tc.hand, gotRank, wantRank)
 		}
 	}
 }
