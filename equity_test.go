@@ -90,16 +90,16 @@ func TestEquity(t *testing.T) {
 				gotBoards := got.Boards
 				want := tc.wantEqs[i]
 				if gotBoards != tc.wantBoards {
-					t.Errorf("hand %s: expected %d boards, got %d", tc.hands[i], tc.wantBoards, gotBoards)
+					t.Errorf("hand %v: expected %d boards, got %d", tc.hands[i], tc.wantBoards, gotBoards)
 				}
 				if math.Abs(gotEq-want.Equity) > 0.001 {
-					t.Errorf("hand %s: equity=%f, want %f", tc.hands[i], gotEq, want.Equity)
+					t.Errorf("hand %v: equity=%f, want %f", tc.hands[i], gotEq, want.Equity)
 				}
 				if math.Abs(gotWin-want.Win) > 0.001 {
-					t.Errorf("hand %s: win=%f, want %f", tc.hands[i], gotWin, want.Win)
+					t.Errorf("hand %v: win=%f, want %f", tc.hands[i], gotWin, want.Win)
 				}
 				if math.Abs(gotTie-want.Tie) > 0.001 {
-					t.Errorf("hand %s: tie=%f, want %f", tc.hands[i], gotTie, want.Tie)
+					t.Errorf("hand %v: tie=%f, want %f", tc.hands[i], gotTie, want.Tie)
 				}
 			}
 		})

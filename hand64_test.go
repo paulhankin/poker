@@ -2,9 +2,57 @@ package poker
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+type addTestCase struct {
+	N     int
+	start string
+	add   string
+	want  string
+}
+
+func TestHand64Add(t *testing.T) {
+	tcs := []addTestCase{
+		{5, "CT HT DT ST", "C8", "S8 CT DT HT ST"},
+		{5, "CT HT DT ST", "S8", "S8 CT DT HT ST"},
+		{5, "H2 D2 C2 CQ", "S2", "S2 CQ D2 H2 C2"},
+	}
+	for _, tc := range tcs {
+		ch0, err := parseHand(tc.start)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want, err := parseHand(tc.want)
+		if err != nil {
+			t.Fatal(err)
+		}
+		addCards, err := parseHand(tc.add)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(addCards) != 1 {
+			t.Fatalf("expected 1 card to add, got %s", tc.add)
+		}
+		addCard := addCards[0]
+		var h64 Hand64
+		for _, c := range ch0 {
+			h64 = (h64 << 8) | Hand64(c)
+		}
+		h64c, xf := h64.CanonicalWithTransform(len(ch0), tc.N)
+		goth, ok := h64c.Add(len(ch0), xf.Apply(addCard))
+		if !ok {
+			t.Errorf("%v.Add(%s) failed", ch0, addCard)
+			continue
+		}
+		got := goth.CardsN(tc.N)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s.Add(%s) = %v, want %v", Hand64(h64c).String(len(ch0)), addCard, got, want)
+		}
+	}
+}
 
 type canonTestCase struct {
 	hand string
@@ -71,7 +119,7 @@ func TestCanonical(t *testing.T) {
 			for _, c := range h0 {
 				h64 = (h64 << 8) | Hand64(c)
 			}
-			got64c := h64.Canonical(N)
+			got64c := h64.Canonical(N, 7)
 			got := Hand64(got64c).String(len(h0))
 			if got != tc.want {
 				t.Errorf("%s.Canon() = %s, want %s", tc.hand, got, tc.want)
@@ -84,7 +132,7 @@ func TestCanonical(t *testing.T) {
 			if strings.Contains(ex64s, "s") {
 				t.Errorf("%s.Canon().Exemplar() = %s, still contains x-suit", tc.hand, ex64s)
 			}
-			rtCanon := ex64.Canonical(N)
+			rtCanon := ex64.Canonical(N, 7)
 			if rtCanon != got64c {
 				t.Errorf("%s.Canon().Exemplar().Canon() = %s, want %s", tc.hand, Hand64(rtCanon).String(N), got)
 			}

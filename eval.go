@@ -45,12 +45,8 @@ func isFlush(c []Card) bool {
 	if len(c) != 5 {
 		return false
 	}
-	for _, ci := range c {
-		if ci.Suit() != c[0].Suit() {
-			return false
-		}
-	}
-	return true
+	and := (1 << (c[0] & 3)) & (1 << (c[1] & 3)) & (1 << (c[2] & 3)) & (1 << (c[3] & 3)) & (1 << (c[4] & 3))
+	return and != 0
 }
 
 // Describe fully describes a 3, 5 or 7 card poker hand.
@@ -148,7 +144,7 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 	dupes := [6]int{}  // uniqs, pairs, trips, quads, quins
 	str8s := [13]int{} // finds straights
 	str8top := 0       // set to the top card of the straight, if any
-	var rankBits [5]uint16
+	var rankBits [6]uint16
 	for _, ci := range c {
 		cr := (int(ci>>2) & 15) + 1
 		rawr := (cr + 11) % 13
@@ -169,6 +165,7 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 	rankBits[1] &^= rankBits[2]
 	rankBits[2] &^= rankBits[3]
 	rankBits[3] &^= rankBits[4]
+	rankBits[4] &^= rankBits[5]
 	if !flush && str8top == 0 && dupes[1] == len(c) { // No pair
 		var a, b, c, d, e int
 		a, rankBits[0] = poptop(rankBits[0])

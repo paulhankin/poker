@@ -113,6 +113,10 @@ func MakeCard(s Suit, r Rank) (Card, error) {
 	return Card(r-1)*4 + Card(s), nil
 }
 
+func (c Card) XSuit() Card {
+	return Card(c.Rank()-1)*4 + 128
+}
+
 // NameToCard maps card names (for example, "C8" or "HA") to a card value.
 var NameToCard map[string]Card
 
