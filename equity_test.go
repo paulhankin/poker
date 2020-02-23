@@ -108,6 +108,8 @@ func TestEquity(t *testing.T) {
 }
 
 func BenchmarkHoldemEquitiesPreflop(b *testing.B) {
+	_ = rootNode7() // make sure we've computed the tree first
+	b.ResetTimer()
 	card := func(s string) Card {
 		c, ok := NameToCard[s]
 		if !ok {
@@ -126,6 +128,8 @@ func BenchmarkHoldemEquitiesPreflop(b *testing.B) {
 }
 
 func BenchmarkHoldemEquitiesFlop(b *testing.B) {
+	_ = rootNode7() // make sure we've computed the tree first
+	b.ResetTimer()
 	card := func(s string) Card {
 		c, ok := NameToCard[s]
 		if !ok {

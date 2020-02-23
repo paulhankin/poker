@@ -3,6 +3,7 @@ package poker
 import (
 	"fmt"
 	"log"
+	"math/bits"
 	"sort"
 	"strings"
 )
@@ -36,40 +37,8 @@ func evalScore(f string, v int, c ...int) eval {
 	}
 }
 
-func evalScoreNoText(f string, v int, c ...int) eval {
-	r := v
-	for i := 0; i < 5; i++ {
-		r *= 16
-		if i < len(c) {
-			r += c[i]
-		}
-	}
-	return eval{
-		rank: r,
-	}
-}
-
-// find picks the nth highest rank of r which is equal to k,
-// returning a number which is higher for higher cards.
-// Returns 0 if there is none.
-func find(k int, r *[13]int, n int) int {
-	for i := 12; i >= 0; i-- {
-		if r[i] == k {
-			if n == 0 {
-				return i + 2
-			}
-			n--
-		}
-	}
-	return 0
-}
-
-func find1(r *[13]int, n int) int {
-	return find(1, r, n)
-}
-
-func find2(r *[13]int, n int) int {
-	return find(2, r, n)
+func evalScore5(v int, a, b, c, d, e int) eval {
+	return eval{rank: v*16*16*16*16*16 + a*16*16*16*16 + b*16*16*16 + c*16*16 + d*16 + e}
 }
 
 func isFlush(c []Card) bool {
@@ -153,6 +122,14 @@ func evalSlow7(c []Card, replace, text bool) (eval, error) {
 	}
 }
 
+func poptop(x uint16) (int, uint16) {
+	lz := bits.LeadingZeros16(x)
+	if lz == 16 {
+		return 0, 0
+	}
+	return 17 - lz, x &^ (1 << (15 - lz))
+}
+
 // evalSlow evaluates a 3- or 5- card poker hand.
 // The result is a number which can be compared
 // with other hand's evaluations to correctly rank them as poker
@@ -166,22 +143,21 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 	if len(c) == 7 {
 		return evalSlow7(c, replace, text)
 	}
-	es := evalScore
-	if !text {
-		es = evalScoreNoText
-	}
 	flush := isFlush(c)
-	ranks := &[13]int{}
+	ranks := [13]int{}
 	dupes := [6]int{}  // uniqs, pairs, trips, quads, quins
 	str8s := [13]int{} // finds straights
 	str8top := 0       // set to the top card of the straight, if any
+	var rankBits [5]uint16
 	for _, ci := range c {
-		rawr := ci.RawRank()
+		cr := (int(ci>>2) & 15) + 1
+		rawr := (cr + 11) % 13
+		rankBits[ranks[rawr]] |= 1 << rawr
 		ranks[rawr] += 1
 		dupes[ranks[rawr]]++
 		dupes[ranks[rawr]-1]--
 		for i := 0; i < 5; i++ {
-			idx := (int(ci.Rank()) + i) % 13
+			idx := (cr + i) % 13
 			str8s[idx] |= 1 << uint(i)
 			// Make sure to exclude wrap-around straights headed by 2, 3, 4.
 			if str8s[idx] == 31 && (idx <= 1 || idx >= 5) {
@@ -189,47 +165,144 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 			}
 		}
 	}
+	rankBits[0] &^= rankBits[1]
+	rankBits[1] &^= rankBits[2]
+	rankBits[2] &^= rankBits[3]
+	rankBits[3] &^= rankBits[4]
 	if !flush && str8top == 0 && dupes[1] == len(c) { // No pair
-		return es("%s-%s-%s-%s-%s", 0, find1(ranks, 0), find1(ranks, 1), find1(ranks, 2), find1(ranks, 3), find1(ranks, 4)), nil
+		var a, b, c, d, e int
+		a, rankBits[0] = poptop(rankBits[0])
+		b, rankBits[0] = poptop(rankBits[0])
+		c, rankBits[0] = poptop(rankBits[0])
+		d, rankBits[0] = poptop(rankBits[0])
+		e, rankBits[0] = poptop(rankBits[0])
+		if text {
+			return evalScore("%s-%s-%s-%s-%s", 0, a, b, c, d, e), nil
+		} else {
+			return evalScore5(0, a, b, c, d, e), nil
+		}
 	}
 	if dupes[2] == 1 && dupes[3] == 0 { // One pair
-		return es("%[1]s%[1]s-%s-%s-%s", 1, find2(ranks, 0), find1(ranks, 0), find1(ranks, 1), find1(ranks, 2)), nil
+		var p, a, b, c int
+		p, rankBits[1] = poptop(rankBits[1])
+		a, rankBits[0] = poptop(rankBits[0])
+		b, rankBits[0] = poptop(rankBits[0])
+		c, rankBits[0] = poptop(rankBits[0])
+		if text {
+			return evalScore("%[1]s%[1]s-%s-%s-%s", 1, p, a, b, c), nil
+		} else {
+			return evalScore5(1, p, a, b, c, 0), nil
+		}
 	}
 	if dupes[2] == 2 { // Two pair
-		return es("%[1]s%[1]s-%[2]s%[2]s-%[3]s", 2, find2(ranks, 0), find2(ranks, 1), find1(ranks, 0)), nil
+		var p, q, a int
+		p, rankBits[1] = poptop(rankBits[1])
+		q, rankBits[1] = poptop(rankBits[1])
+		a, rankBits[0] = poptop(rankBits[0])
+		if text {
+			return evalScore("%[1]s%[1]s-%[2]s%[2]s-%[3]s", 2, p, q, a), nil
+		} else {
+			return evalScore5(2, p, q, a, 0, 0), nil
+		}
 	}
 	if dupes[3] == 1 && dupes[2] == 0 { // Trips
 		if replace {
-			return es("%[1]s%[1]s%[1]s-%s-%s", 3, find(3, ranks, 0), find1(ranks, 0), find1(ranks, 1)), nil
+			var t, a, b int
+			a, rankBits[0] = poptop(rankBits[0])
+			b, rankBits[0] = poptop(rankBits[0])
+			t, rankBits[2] = poptop(rankBits[2])
+			if text {
+				return evalScore("%[1]s%[1]s%[1]s-%s-%s", 3, t, a, b), nil
+			} else {
+				return evalScore5(3, t, a, b, 0, 0), nil
+			}
 		}
 		if len(c) == 5 {
-			return es("%[1]s%[1]s%[1]s-x-y", 3, find(3, ranks, 0)), nil // ignore kickers
+			var t int
+			t, rankBits[2] = poptop(rankBits[2])
+			if text {
+				return evalScore("%[1]s%[1]s%[1]s-x-y", 3, t), nil // ignore kickers
+			} else {
+				return evalScore5(3, t, 0, 0, 0, 0), nil
+			}
 		}
-		return es("%[1]s%[1]s%[1]s", 3, find(3, ranks, 0)), nil
+		var t int
+		t, rankBits[2] = poptop(rankBits[2])
+		if text {
+			return evalScore("%[1]s%[1]s%[1]s", 3, t), nil
+		} else {
+			return evalScore5(3, t, 0, 0, 0, 0), nil
+		}
 	}
 	if str8top != 0 && !flush { // Straight
-		return es("%s straight", 4, (str8top+11)%13+2), nil
+		if text {
+			return evalScore("%s straight", 4, (str8top+11)%13+2), nil
+		} else {
+			return evalScore5(4, (str8top+11)%13+2, 0, 0, 0, 0), nil
+		}
 	}
 	if flush && str8top == 0 { // Flush
-		return es("%s%s%s%s%s flush", 5, find1(ranks, 0), find1(ranks, 1), find1(ranks, 2), find1(ranks, 3), find1(ranks, 4)), nil
+		var a, b, c, d, e int
+		a, rankBits[0] = poptop(rankBits[0])
+		b, rankBits[0] = poptop(rankBits[0])
+		c, rankBits[0] = poptop(rankBits[0])
+		d, rankBits[0] = poptop(rankBits[0])
+		e, rankBits[0] = poptop(rankBits[0])
+		if text {
+			return evalScore("%s%s%s%s%s flush", 5, a, b, c, d, e), nil
+		} else {
+			return evalScore5(5, a, b, c, d, e), nil
+		}
 	}
 	if dupes[2] == 1 && dupes[3] == 1 { // Full house
+		var t, p int
+		t, rankBits[2] = poptop(rankBits[2])
+		p, rankBits[1] = poptop(rankBits[1])
 		if replace {
-			return es("%[1]s%[1]s%[1]s-%[2]s%[2]s", 6, find(3, ranks, 0), find2(ranks, 0)), nil
+			if text {
+				return evalScore("%[1]s%[1]s%[1]s-%[2]s%[2]s", 6, t, p), nil
+			} else {
+				return evalScore5(6, t, p, 0, 0, 0), nil
+			}
 		}
-		return es("%[1]s%[1]s%[1]s-xx", 6, find(3, ranks, 0)), nil // ignore lower pair
+		if text {
+			return evalScore("%[1]s%[1]s%[1]s-xx", 6, t), nil // ignore lower pair
+		} else {
+			return evalScore5(6, t, 0, 0, 0, 0), nil // ignore lower pair
+		}
 	}
 	if dupes[4] == 1 { // Quads
+		var q, a int
+		q, rankBits[3] = poptop(rankBits[3])
+		a, rankBits[0] = poptop(rankBits[0])
 		if replace {
-			return es("%[1]s%[1]s%[1]s%[1]s-%[2]s", 7, find(4, ranks, 0), find1(ranks, 0)), nil
+			if text {
+				return evalScore("%[1]s%[1]s%[1]s%[1]s-%[2]s", 7, q, a), nil
+			} else {
+				return evalScore5(7, q, a, 0, 0, 0), nil
+			}
 		}
-		return es("%[1]s%[1]s%[1]s%[1]s-x", 7, find(4, ranks, 0)), nil // ignore kicker
+		if text {
+			return evalScore("%[1]s%[1]s%[1]s%[1]s-x", 7, q), nil // ignore kicker
+		} else {
+			return evalScore5(7, q, 0, 0, 0, 0), nil
+		}
 	}
 	if str8top != 0 && flush { // Straight flush
-		return es("%s straight flush", 8, (str8top+11)%13+2), nil
+		if text {
+			return evalScore("%s straight flush", 8, (str8top+11)%13+2), nil
+		} else {
+			return evalScore5(8, (str8top+11)%13+2, 0, 0, 0, 0), nil
+		}
 	}
 	if dupes[5] == 1 { // 5-kind
-		return es("%[1]s%[1]s%[1]s%[1]s%[1]s", 9, find(5, ranks, 0)), nil
+		var q int
+		q, rankBits[4] = poptop(rankBits[4])
+		if text {
+			return evalScore("%[1]s%[1]s%[1]s%[1]s%[1]s", 9, q), nil
+		} else {
+			return evalScore5(9, q, 0, 0, 0, 0), nil
+		}
 	}
 	return eval{}, fmt.Errorf("failed to eval hand %v", c)
 }
