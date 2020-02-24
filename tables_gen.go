@@ -1,3 +1,5 @@
+// +build gendata
+
 package poker
 
 var (

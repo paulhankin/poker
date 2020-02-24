@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+//go:generate go run -tags gendata ./gen_tables_static.go
+
 type tblTransition struct {
 	rank int16 // for terminal nodes
 	// SX describes how subsequent cards should
@@ -269,4 +271,10 @@ func Eval7(hand *[7]Card) int16 {
 	idx = int(v >> 8)
 
 	return int16(rootNode7table[idx+int(tx.Apply(hand[6]))])
+}
+
+// InternalTables returns the tables of data used in the
+// optimized 3- 5- and 7- card evaluators.
+func InternalTables() (tbl3 []int16, tbl5, tbl6 []uint32) {
+	return rootNode3table[:], rootNode5table[:], rootNode7table[:]
 }
