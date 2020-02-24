@@ -4,8 +4,10 @@ Poker hand evaluator
 This go package provides a fast poker hand evaluator for 3-card,
 5-card and 7-card hands.
 
-When benchmarking on my machine, I get around 36 million 5-card
-evaluations per second, or roughly 100 cycles per eval.
+When benchmarking on my machine, on a single core I get around
+36 million 5-card evaluations per second, or roughly 100 CPU cycles
+per eval. And 24.5 million 7-card evaluations per second, or
+roughly 150 cycles per eval.
 
 It works using the same principles as the [2+2 hand evaluator](http://archives1.twoplustwo.com/showflat.php?Cat=0&Number=8513906).
 It uses a huge state machine, with 52 transitions out for each state representing

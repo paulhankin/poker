@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -132,6 +133,33 @@ func BenchmarkEval5(b *testing.B) {
 			panic("x")
 		}
 	}
+}
+
+func BenchmarkEval7(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var T int64
+		for a := Card(0); a < Card(52); a++ {
+			for b := Card(a) + 1; b < Card(52); b++ {
+				for c := Card(b) + 1; c < Card(52); c++ {
+					for d := Card(c) + 1; d < Card(52); d++ {
+						for e := Card(d) + 1; e < Card(52); e++ {
+							for f := Card(e) + 1; f < Card(52); f++ {
+								for g := Card(f) + 1; g < Card(52); g++ {
+									h := [7]Card{a, b, c, d, e, f, g}
+									T += int64(Eval7(&h))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		// make sure we're not optimizing the code away.
+		if T == 0 {
+			panic("x")
+		}
+	}
+	fmt.Printf("evaluated %d 7-card hands\n", b.N*52*51*50*49*48*47*45/(7*6*5*4*3*2))
 }
 
 func TestTables(t *testing.T) {
