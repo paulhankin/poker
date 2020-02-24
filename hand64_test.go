@@ -14,7 +14,7 @@ type addTestCase struct {
 	want  string
 }
 
-func TestHand64Add(t *testing.T) {
+func Testhand64Add(t *testing.T) {
 	tcs := []addTestCase{
 		{5, "CT HT DT ST", "C8", "S8 CT DT HT ST"},
 		{5, "CT HT DT ST", "S8", "S8 CT DT HT ST"},
@@ -37,9 +37,9 @@ func TestHand64Add(t *testing.T) {
 			t.Fatalf("expected 1 card to add, got %s", tc.add)
 		}
 		addCard := addCards[0]
-		var h64 Hand64
+		var h64 hand64
 		for _, c := range ch0 {
-			h64 = (h64 << 8) | Hand64(c)
+			h64 = (h64 << 8) | hand64(c)
 		}
 		h64c, xf := h64.CanonicalWithTransform(len(ch0), tc.N)
 		goth, ok := h64c.Add(len(ch0), xf.Apply(addCard))
@@ -49,7 +49,7 @@ func TestHand64Add(t *testing.T) {
 		}
 		got := goth.CardsN(tc.N)
 		if !reflect.DeepEqual(got, want) {
-			t.Errorf("%s.Add(%s) = %v, want %v", Hand64(h64c).String(len(ch0)), addCard, got, want)
+			t.Errorf("%s.Add(%s) = %v, want %v", hand64(h64c).String(len(ch0)), addCard, got, want)
 		}
 	}
 }
@@ -115,12 +115,12 @@ func TestCanonical(t *testing.T) {
 			t.Fatalf("%s: parseHand(%s) gave error %s", head, tc.hand, err)
 		}
 		N := len(h0)
-		var h64 Hand64
+		var h64 hand64
 		for _, c := range h0 {
-			h64 = (h64 << 8) | Hand64(c)
+			h64 = (h64 << 8) | hand64(c)
 		}
 		got64c := h64.Canonical(N, 7)
-		got := Hand64(got64c).String(len(h0))
+		got := hand64(got64c).String(len(h0))
 		if got != tc.want {
 			t.Errorf("%s: %s.Canon() = %s, want %s", head, tc.hand, got, tc.want)
 		}
@@ -134,7 +134,7 @@ func TestCanonical(t *testing.T) {
 		}
 		rtCanon := ex64.Canonical(N, 7)
 		if rtCanon != got64c {
-			t.Errorf("%s: %s.Canon().Exemplar().Canon() = %s, want %s", head, tc.hand, Hand64(rtCanon).String(N), got)
+			t.Errorf("%s: %s.Canon().Exemplar().Canon() = %s, want %s", head, tc.hand, hand64(rtCanon).String(N), got)
 		}
 	}
 }

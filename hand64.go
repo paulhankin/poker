@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-// Hand64 is a hand with up to N<=7 cards in it, stored
+// hand64 is a hand with up to N<=7 cards in it, stored
 // in the lowest N bytes.
-type Hand64 uint64
+type hand64 uint64
 
-// hand64Canonical is a compressed version of Hand64.
-// It is like a Hand64 except that the cards are sorted, and the suits are
+// hand64Canonical is a compressed version of hand64.
+// It is like a hand64 except that the cards are sorted, and the suits are
 // canonicalized to appear in increasing order, so that the first card
 // is always a club, the second a club
 // or diamond, the third a club, diamond, or heart (only if
@@ -23,7 +23,7 @@ type hand64Canonical uint64
 
 // CardsN returns the first n cards in the hand.
 // If n is more than 7, only the first 7 cards are returned.
-func (h Hand64) CardsN(n int) []Card {
+func (h hand64) CardsN(n int) []Card {
 	if n <= 0 {
 		return nil
 	}
@@ -42,10 +42,10 @@ func (h Hand64) CardsN(n int) []Card {
 // The card can't be added if:
 //  - it's already in the hand
 //  - it would result in 5 cards of the same rank in the hand
-func (h hand64Canonical) Add(n int, c Card) (Hand64, bool) {
+func (h hand64Canonical) Add(n int, c Card) (hand64, bool) {
 	rc := 0
 	for i := 0; i < n; i++ {
-		ci := Hand64(h).Card(i)
+		ci := hand64(h).Card(i)
 		if ci == c {
 			return 0, false
 		}
@@ -59,7 +59,7 @@ func (h hand64Canonical) Add(n int, c Card) (Hand64, bool) {
 	return ((h << 8) | hand64Canonical(c)).exemplar(n+1, true), true
 }
 
-func (h Hand64) String(n int) string {
+func (h hand64) String(n int) string {
 	var s []string
 	for i := 0; i < n; i++ {
 		s = append(s, h.Card(i).String())
@@ -67,7 +67,7 @@ func (h Hand64) String(n int) string {
 	return strings.Join(s, " ")
 }
 
-func (h Hand64) Card(i int) Card {
+func (h hand64) Card(i int) Card {
 	return Card(h >> (8 * i) & 0xff)
 }
 
@@ -77,18 +77,18 @@ type canonSuit struct {
 	n     int
 }
 
-func (h Hand64) SwapCards(i, j int) Hand64 {
+func (h hand64) SwapCards(i, j int) hand64 {
 	c0 := h.Card(i)
 	c1 := h.Card(j)
 	h &^= 0xff << (8 * i)
 	h &^= 0xff << (8 * j)
-	h |= Hand64(c0) << (8 * j)
-	h |= Hand64(c1) << (8 * i)
+	h |= hand64(c0) << (8 * j)
+	h |= hand64(c1) << (8 * i)
 	return h
 }
 
 func (hc hand64Canonical) Sorted(n int) hand64Canonical {
-	h := Hand64(hc)
+	h := hand64(hc)
 	for i := 0; i < n-1; i++ {
 		for j := i + 1; j < n; j++ {
 			if h.Card(i) < h.Card(j) {
@@ -99,9 +99,9 @@ func (hc hand64Canonical) Sorted(n int) hand64Canonical {
 	return hand64Canonical(h)
 }
 
-func (hc hand64Canonical) exemplar(n int, botNew bool) Hand64 {
+func (hc hand64Canonical) exemplar(n int, botNew bool) hand64 {
 	var suits uint
-	h := Hand64(hc)
+	h := hand64(hc)
 	for i := 0; i < n; i++ {
 		s := h.Card(i).Suit()
 		if s != XSuit && (i > 0 || !botNew) {
@@ -129,10 +129,10 @@ func (hc hand64Canonical) exemplar(n int, botNew bool) Hand64 {
 		}
 		if nc == 0xff {
 			log.Printf("suits = %x", suits)
-			log.Fatalf("exemplar(%s, %d, %v) failed to find suit at step %d", Hand64(hc).String(n), n, botNew, i)
+			log.Fatalf("exemplar(%s, %d, %v) failed to find suit at step %d", hand64(hc).String(n), n, botNew, i)
 		}
-		h &^= Hand64(0xff << (8 * i)) // clear i'th card
-		h |= Hand64(nc) << (8 * i)    // set new card, with specific suit.
+		h &^= hand64(0xff << (8 * i)) // clear i'th card
+		h |= hand64(nc) << (8 * i)    // set new card, with specific suit.
 		ns = (ns + 1) & 3             // use a different suit next time.
 	}
 	return h
@@ -140,7 +140,7 @@ func (hc hand64Canonical) exemplar(n int, botNew bool) Hand64 {
 
 // Exemplar returns one example hand of n cards that
 // canonicalizes to h.
-func (hc hand64Canonical) Exemplar(n int) Hand64 {
+func (hc hand64Canonical) Exemplar(n int) hand64 {
 	return hc.exemplar(n, false)
 }
 
@@ -185,14 +185,14 @@ func (st suitTransform) Apply(c Card) Card {
 	return Card(st[c&3]) | (c &^ 3)
 }
 
-// Canonical takes an n-card Hand64, and returns its
+// Canonical takes an n-card hand64, and returns its
 // canonical form.
-func (h Hand64) Canonical(n, finalN int) hand64Canonical {
+func (h hand64) Canonical(n, finalN int) hand64Canonical {
 	r, _ := h.CanonicalWithTransform(n, finalN)
 	return r
 }
 
-func (h Hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, suitTransform) {
+func (h hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, suitTransform) {
 	var csuits [4]canonSuit
 	for i := 0; i < 4; i++ {
 		csuits[i].s = Suit(i)
