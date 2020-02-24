@@ -11,7 +11,7 @@ It works using the same principles as the [2+2 hand evaluator](http://archives1.
 It uses a huge state machine, with 52 transitions out for each state representing
 52 possible next cards. The final nodes contain 52 ranks for each of the
 52 last cards. By merging nodes for equivalent hands, the number of
-states is much smaller than (52*51*50*49*48*47*46) as it would be
+states is much smaller than (52\*51\*50\*49\*48\*47\*46) as it would be
 for a naive 7-card state machine. The number of states for the 5-card
 eval is only 3459, and 163060 for the 7-card eval.
 
