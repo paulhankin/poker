@@ -30,10 +30,10 @@ func TestEval5Single(t *testing.T) {
 				cards[i], cards[i+perms%(5-i)] = cards[i+perms%(5-i)], cards[i]
 				p /= (5 - i)
 			}
-			gotEval := nodeEval5(&cards)
+			gotEval := Eval5(&cards)
 			wantEval := EvalSlow(cards[:])
 			if gotEval != wantEval {
-				t.Errorf("%v.nodeEval() = %d, want %d", cards[:], gotEval, wantEval)
+				t.Errorf("%v.Eval() = %d, want %d", cards[:], gotEval, wantEval)
 				t.Errorf("... hand evaluated to %v", evalInfo.rankTo5[gotEval])
 			}
 		}
@@ -135,7 +135,6 @@ func BenchmarkEval5(b *testing.B) {
 }
 
 func TestTables(t *testing.T) {
-	rootNode7()
 	tcs := []tableTestCase{
 		{hand: "HK DK S2 D3 CQ DJ D7"},
 		{hand: "SA HA DA DK HK SQ CA"},

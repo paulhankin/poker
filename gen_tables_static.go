@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 	"os"
@@ -10,10 +11,30 @@ import (
 	"github.com/paulhankin/poker"
 )
 
-func main() {
+func writeFile() {
+	f, err := os.Create("poker.dat")
+	if err != nil {
+		log.Fatalf("failed to create data file: %v", err)
+	}
+	tbl3, tbl5, tbl7 := poker.InternalTables()
+	if err := binary.Write(f, binary.LittleEndian, tbl7[:]); err != nil {
+		log.Fatalf("failed to write data: %v", err)
+	}
+	if err := binary.Write(f, binary.LittleEndian, tbl5[:]); err != nil {
+		log.Fatalf("failed to write data: %v", err)
+	}
+	if err := binary.Write(f, binary.LittleEndian, tbl3[:]); err != nil {
+		log.Fatalf("failed to write data: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		log.Fatalf("failed to write data: %v", err)
+	}
+}
+
+func writeSource() {
 	f, err := os.Create("tables_static.go")
 	if err != nil {
-		log.Fatalf("failed to create target file %q: %v", os.Args[1], err)
+		log.Fatalf("failed to create source file: %v", err)
 	}
 	tbl3, tbl5, tbl7 := poker.InternalTables()
 	var werr error
@@ -24,7 +45,7 @@ func main() {
 		_, werr = fmt.Fprintf(f, v, args...)
 	}
 	wf(`
-// +build !gendata
+// +build staticdata
 
 package poker
 
@@ -68,4 +89,9 @@ var rootNode3table = [16 * 16 * 16]int16{`)
 	if werr = f.Close(); werr != nil {
 		log.Fatalf("failed to close file: %v", werr)
 	}
+}
+
+func main() {
+	writeSource()
+	writeFile()
 }
