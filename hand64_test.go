@@ -14,7 +14,7 @@ type addTestCase struct {
 	want  string
 }
 
-func Testhand64Add(t *testing.T) {
+func TestHand64Add(t *testing.T) {
 	tcs := []addTestCase{
 		{5, "CT HT DT ST", "C8", "S8 CT DT HT ST"},
 		{5, "CT HT DT ST", "S8", "S8 CT DT HT ST"},
@@ -139,7 +139,7 @@ func TestCanonical(t *testing.T) {
 	}
 }
 
-func TestsuitTransformApply(t *testing.T) {
+func TestSuitTransformApply(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		for c := Card(0); c < 52; c++ {
 			stb := suitTransformByte(i)
@@ -156,7 +156,7 @@ func TestsuitTransformApply(t *testing.T) {
 	}
 }
 
-func TestsuitTransformCompose(t *testing.T) {
+func TestSuitTransformCompose(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		stbi := suitTransformByte(i)
 		stli := stbi.Long()
