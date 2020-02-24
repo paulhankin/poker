@@ -1,4 +1,4 @@
-// +build !gendata,!staticdata
+// +build filedata
 
 package poker
 

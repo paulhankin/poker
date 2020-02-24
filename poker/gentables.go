@@ -1,12 +1,11 @@
 package poker
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 )
 
-//go:generate go run -tags gendata ./gen_tables_static.go
+//go:generate go run ./gen_tables_static.go
 
 type tblTransition struct {
 	rank int16 // for terminal nodes
@@ -137,8 +136,6 @@ func (g *genner) genworker(ncards int) {
 }
 
 func gentree(ncards int) *tblNode {
-	fmt.Println("generating tables for", ncards, "cards")
-
 	g := &genner{
 		cache: map[hand64Canonical]*tblNode{},
 		work:  make(chan genwork, 10_000_000),
