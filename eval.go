@@ -343,56 +343,6 @@ func EvalSlow(c []Card) int16 {
 	return evalInfo.slowRankToPacked[ev.rank]
 }
 
-func eval5idx(c *[7]Card, idx [5]int) int16 {
-	h := [5]Card{c[idx[0]], c[idx[1]], c[idx[2]], c[idx[3]], c[idx[4]]}
-	return EvalSlow(h[:])
-}
-
-// EvalSlow7 returns the ranking of the best 5-card hand
-// that's a subset of the given 7 cards.
-func EvalSlow7(c *[7]Card) int16 {
-	idx := [5]int{4, 3, 2, 1, 0}
-	var best int16
-	for {
-		if ev := eval5idx(c, idx); ev > best {
-			best = ev
-		}
-		if idx[0] < 6 {
-			idx[0]++
-		} else if idx[1] < 5 {
-			idx[1]++
-			idx[0] = idx[1] + 1
-		} else if idx[2] < 4 {
-			idx[2]++
-			idx[1] = idx[2] + 1
-			idx[0] = idx[1] + 1
-		} else if idx[3] < 3 {
-			idx[3]++
-			idx[2] = idx[3] + 1
-			idx[1] = idx[2] + 1
-			idx[0] = idx[1] + 1
-		} else if idx[4] < 2 {
-			idx[4]++
-			idx[3] = idx[4] + 1
-			idx[2] = idx[3] + 1
-			idx[1] = idx[2] + 1
-			idx[0] = idx[1] + 1
-		} else {
-			return best
-		}
-	}
-}
-
-// EvalSlow5 is an optimized version of EvalSlow which requires a 5-card hand.
-func EvalSlow5(c *[5]Card) int16 {
-	return EvalSlow(c[:])
-}
-
-// EvalSlow3 is an optimized version of EvalSlow which requires a 3-card hand.
-func EvalSlow3(c *[3]Card) int16 {
-	return EvalSlow(c[:])
-}
-
 func nextIdx(ix []int, k int, dupes int) bool {
 	i := 0
 	for {

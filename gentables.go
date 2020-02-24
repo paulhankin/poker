@@ -6,42 +6,42 @@ import (
 	"sync"
 )
 
-type Transition struct {
+type tblTransition struct {
 	rank int16 // for terminal nodes
 	// SX describes how subsequent cards should
 	// be transformed before
 	SX SuitTransform
-	N  *Node // The node to transform to
+	N  *tblNode // The node to transform to
 }
 
-type Node struct {
+type tblNode struct {
 	Index int
 	N     int // number of cards
-	H     Hand64Canonical
-	T     [52]Transition
+	H     hand64Canonical
+	T     [52]tblTransition
 }
 
 type genwork struct {
 	n    int
-	h    Hand64Canonical
-	node **Node
+	h    hand64Canonical
+	node **tblNode
 }
 
 type genner struct {
 	m     sync.Mutex
-	cache map[Hand64Canonical]*Node
+	cache map[hand64Canonical]*tblNode
 	work  chan genwork
 	wg    sync.WaitGroup
 }
 
-func (g *genner) get(key Hand64Canonical) (*Node, bool) {
+func (g *genner) get(key hand64Canonical) (*tblNode, bool) {
 	g.m.Lock()
 	defer g.m.Unlock()
 	n, ok := g.cache[key]
 	if ok {
 		return n, true
 	}
-	n = &Node{Index: len(g.cache)}
+	n = &tblNode{Index: len(g.cache)}
 	g.cache[key] = n
 	return n, false
 }
@@ -88,7 +88,7 @@ func (g *genner) genworker(ncards int) {
 	for w := range g.work {
 		h := w.h
 		n := w.n
-		key := h | (Hand64Canonical(n) << (64 - 8))
+		key := h | (hand64Canonical(n) << (64 - 8))
 		node, ok := g.get(key)
 		*w.node = node
 		if ok {
@@ -112,15 +112,15 @@ func (g *genner) genworker(ncards int) {
 				} else if ncards == 5 {
 					var c5 [5]Card
 					copy(c5[:], nhc.Exemplar(5).CardsN(5))
-					rank = EvalSlow5(&c5)
+					rank = EvalSlow(c5[:])
 				} else {
 					panic(ncards)
 				}
-				node.T[c] = Transition{
+				node.T[c] = tblTransition{
 					rank: rank,
 				}
 			} else {
-				node.T[c] = Transition{
+				node.T[c] = tblTransition{
 					SX: xf,
 				}
 				g.wg.Add(1)
@@ -134,11 +134,11 @@ func (g *genner) genworker(ncards int) {
 	}
 }
 
-func gentree(ncards int) *Node {
+func gentree(ncards int) *tblNode {
 	fmt.Println("generating tables for", ncards, "cards")
 
 	g := &genner{
-		cache: map[Hand64Canonical]*Node{},
+		cache: map[hand64Canonical]*tblNode{},
 		work:  make(chan genwork, 10_000_000),
 	}
 	g.wg.Add(1)
@@ -150,69 +150,40 @@ func gentree(ncards int) *Node {
 			wg.Done()
 		}()
 	}
-	node := &Node{}
+	node := &tblNode{}
 	g.work <- genwork{node: &node}
 	g.wg.Wait()
 	close(g.work)
 	wg.Wait()
-
-	var indextable []uint32
-	if ncards == 5 {
-		indextable = rootNode5table[:]
-	} else if ncards == 7 {
-		indextable = rootNode7table[:]
-	}
-	for _, node := range g.cache {
-		table := indextable[node.Index*52 : (node.Index+1)*52]
-		if node.N == ncards-1 {
-			for i, t := range node.T {
-				table[i] = uint32(t.rank)
-			}
-		} else {
-			for i, t := range node.T {
-				if t.N != nil {
-					table[i] = (uint32(t.N.Index*52) << 8) | uint32(t.SX.Byte())
-				}
-			}
-		}
-	}
-
-	fmt.Println("nodes created for", ncards, "cards:", len(g.cache))
 	return node
 }
 
 var (
-	rootNode5card  *Node
-	rootNode5table [3459 * 52]uint32
+	rootNode5card     *tblNode
+	rootNode5cardInit sync.Once
 
-	rootNode7card     *Node
-	rootNode7table    [163060 * 52]uint32
+	rootNode7card     *tblNode
 	rootNode7cardInit sync.Once
 )
 
-func rootNode7() *Node {
+func rootNode7() *tblNode {
 	rootNode7cardInit.Do(func() {
 		rootNode7card = gentree(7)
 	})
 	return rootNode7card
 }
 
-func init() {
-	rootNode5card = gentree(5)
-}
-
-func rootNode5() *Node {
+func rootNode5() *tblNode {
+	rootNode5cardInit.Do(func() {
+		rootNode5card = gentree(5)
+	})
 	return rootNode5card
 }
 
-func init() {
-	rootNode7()
-}
-
-func NodeEval7(hand *[7]Card) int16 {
+func nodeEval7(hand *[7]Card) int16 {
 	node := rootNode7()
 	tx := SuitTransform{0, 1, 2, 3}
-	var t Transition
+	var t tblTransition
 	for i := 0; i < 6; i++ {
 		t = node.T[tx.Apply(hand[i])]
 		tx = tx.Compose(t.SX)
@@ -222,10 +193,10 @@ func NodeEval7(hand *[7]Card) int16 {
 	return rank
 }
 
-func NodeEval5(hand *[5]Card) int16 {
+func nodeEval5(hand *[5]Card) int16 {
 	node := rootNode5()
 	tx := SuitTransform{0, 1, 2, 3}
-	var t Transition
+	var t tblTransition
 	for i := 0; i < 4; i++ {
 		t = node.T[tx.Apply(hand[i])]
 		tx = tx.Compose(t.SX)
