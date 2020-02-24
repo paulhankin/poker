@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/paulhankin/v2/poker"
+	"github.com/paulhankin/poker/v2/poker"
 )
 
 var (
