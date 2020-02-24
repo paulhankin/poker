@@ -139,10 +139,10 @@ func TestCanonical(t *testing.T) {
 	}
 }
 
-func TestSuitTransformApply(t *testing.T) {
+func TestsuitTransformApply(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		for c := Card(0); c < 52; c++ {
-			stb := SuitTransformByte(i)
+			stb := suitTransformByte(i)
 			stl := stb.Long()
 			if stl.Byte() != stb {
 				t.Errorf("%08b.Long() = %v.Byte() = %08b, want %08b", stb, stl, stl.Byte(), stb)
@@ -156,15 +156,15 @@ func TestSuitTransformApply(t *testing.T) {
 	}
 }
 
-func TestSuitTransformCompose(t *testing.T) {
+func TestsuitTransformCompose(t *testing.T) {
 	for i := 0; i < 256; i++ {
-		stbi := SuitTransformByte(i)
+		stbi := suitTransformByte(i)
 		stli := stbi.Long()
 		if stli.Byte() != stbi {
 			t.Fatalf("failed to roundtrip %x", i)
 		}
 		for j := 0; j < 256; j++ {
-			stbj := SuitTransformByte(j)
+			stbj := suitTransformByte(j)
 			stlj := stbj.Long()
 			if stlj.Byte() != stbj {
 				t.Fatalf("failed to roundtrip %x", j)

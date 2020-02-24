@@ -144,30 +144,30 @@ func (hc hand64Canonical) Exemplar(n int) Hand64 {
 	return hc.exemplar(n, false)
 }
 
-// SuitTransform represents a mapping of suits to other suits.
-type SuitTransform [4]uint8
-type SuitTransformByte uint8
+// suitTransform represents a mapping of suits to other suits.
+type suitTransform [4]uint8
+type suitTransformByte uint8
 
 // Compose generates a suit transform that performs one suit transform after another.
 // st.Compose(st2) applied to a suit s is the same as applying st first,
 // and then st2 to the result.
-func (st SuitTransform) Compose(st2 SuitTransform) SuitTransform {
-	return SuitTransform{st2[st[0]], st2[st[1]], st2[st[2]], st2[st[3]]}
+func (st suitTransform) Compose(st2 suitTransform) suitTransform {
+	return suitTransform{st2[st[0]], st2[st[1]], st2[st[2]], st2[st[3]]}
 }
 
-func (st SuitTransform) Byte() SuitTransformByte {
+func (st suitTransform) Byte() suitTransformByte {
 	if st[0] > 3 || st[1] > 3 || st[2] > 3 || st[3] > 3 {
 		log.Fatalf("can't transform suit transform %v to byte", st[:])
 	}
-	return SuitTransformByte(st[0] | (st[1] << 2) | (st[2] << 4) | (st[3] << 6))
+	return suitTransformByte(st[0] | (st[1] << 2) | (st[2] << 4) | (st[3] << 6))
 }
 
-func (st SuitTransformByte) Apply(c Card) Card {
+func (st suitTransformByte) Apply(c Card) Card {
 	return Card(st>>(2*(c&3))&3) | (c &^ 3)
 }
 
-func (st SuitTransformByte) Compose(st2 SuitTransformByte) SuitTransformByte {
-	var r SuitTransformByte
+func (st suitTransformByte) Compose(st2 suitTransformByte) suitTransformByte {
+	var r suitTransformByte
 	r = (st2 >> (2 * (st & 3))) & 3
 	r |= ((st2 >> (2 * ((st >> 2) & 3))) & 3) << 2
 	r |= ((st2 >> (2 * ((st >> 4) & 3))) & 3) << 4
@@ -175,13 +175,13 @@ func (st SuitTransformByte) Compose(st2 SuitTransformByte) SuitTransformByte {
 	return r
 }
 
-func (st SuitTransformByte) Long() SuitTransform {
-	return SuitTransform{uint8(st & 3), uint8((st >> 2) & 3), uint8((st >> 4) & 3), uint8((st >> 6) & 3)}
+func (st suitTransformByte) Long() suitTransform {
+	return suitTransform{uint8(st & 3), uint8((st >> 2) & 3), uint8((st >> 4) & 3), uint8((st >> 6) & 3)}
 }
 
-var SuitTransformByteIdentity = SuitTransform{0, 1, 2, 3}.Byte()
+var suitTransformByteIdentity = suitTransform{0, 1, 2, 3}.Byte()
 
-func (st SuitTransform) Apply(c Card) Card {
+func (st suitTransform) Apply(c Card) Card {
 	return Card(st[c&3]) | (c &^ 3)
 }
 
@@ -192,7 +192,7 @@ func (h Hand64) Canonical(n, finalN int) hand64Canonical {
 	return r
 }
 
-func (h Hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, SuitTransform) {
+func (h Hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, suitTransform) {
 	var csuits [4]canonSuit
 	for i := 0; i < 4; i++ {
 		csuits[i].s = Suit(i)
@@ -238,7 +238,7 @@ func (h Hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, SuitTran
 			hs = (hs << 8) | hand64Canonical(card)
 		}
 	}
-	xf := SuitTransform{}
+	xf := suitTransform{}
 	for i := 0; i < 4; i++ {
 		if si[i] > 3 {
 			// We remap suits that will be x-suits

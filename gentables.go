@@ -10,7 +10,7 @@ type tblTransition struct {
 	rank int16 // for terminal nodes
 	// SX describes how subsequent cards should
 	// be transformed before
-	SX SuitTransform
+	SX suitTransform
 	N  *tblNode // The node to transform to
 }
 
@@ -182,7 +182,7 @@ func rootNode5() *tblNode {
 
 func nodeEval7(hand *[7]Card) int16 {
 	node := rootNode7()
-	tx := SuitTransform{0, 1, 2, 3}
+	tx := suitTransform{0, 1, 2, 3}
 	var t tblTransition
 	for i := 0; i < 6; i++ {
 		t = node.T[tx.Apply(hand[i])]
@@ -195,7 +195,7 @@ func nodeEval7(hand *[7]Card) int16 {
 
 func nodeEval5(hand *[5]Card) int16 {
 	node := rootNode5()
-	tx := SuitTransform{0, 1, 2, 3}
+	tx := suitTransform{0, 1, 2, 3}
 	var t tblTransition
 	for i := 0; i < 4; i++ {
 		t = node.T[tx.Apply(hand[i])]
@@ -208,23 +208,23 @@ func nodeEval5(hand *[5]Card) int16 {
 
 func Eval5(hand *[5]Card) int16 {
 	idx := 0
-	tx := SuitTransformByteIdentity
+	tx := suitTransformByteIdentity
 	var v uint32
 
 	v = rootNode5table[idx+int(tx.Apply(hand[0]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode5table[idx+int(tx.Apply(hand[1]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode5table[idx+int(tx.Apply(hand[2]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode5table[idx+int(tx.Apply(hand[3]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	return int16(rootNode5table[idx+int(tx.Apply(hand[4]))])
@@ -232,31 +232,31 @@ func Eval5(hand *[5]Card) int16 {
 
 func Eval7(hand *[7]Card) int16 {
 	idx := 0
-	tx := SuitTransformByteIdentity
+	tx := suitTransformByteIdentity
 	var v uint32
 
 	v = rootNode7table[idx+int(tx.Apply(hand[0]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode7table[idx+int(tx.Apply(hand[1]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode7table[idx+int(tx.Apply(hand[2]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode7table[idx+int(tx.Apply(hand[3]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode7table[idx+int(tx.Apply(hand[4]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	v = rootNode7table[idx+int(tx.Apply(hand[5]))]
-	tx = tx.Compose(SuitTransformByte(v))
+	tx = tx.Compose(suitTransformByte(v))
 	idx = int(v >> 8)
 
 	return int16(rootNode7table[idx+int(tx.Apply(hand[6]))])
