@@ -1,7 +1,6 @@
 package poker
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -114,6 +113,7 @@ func TestEval5(t *testing.T) {
 }
 
 func BenchmarkEval5(b *testing.B) {
+	var S int64
 	for i := 0; i < b.N; i++ {
 		var T int64
 		for a := Card(0); a < Card(52); a++ {
@@ -123,6 +123,7 @@ func BenchmarkEval5(b *testing.B) {
 						for e := Card(d) + 1; e < Card(52); e++ {
 							h := [5]Card{a, b, c, d, e}
 							T += int64(Eval5(&h))
+							S++
 						}
 					}
 				}
@@ -133,9 +134,16 @@ func BenchmarkEval5(b *testing.B) {
 			panic("x")
 		}
 	}
+	total := int64(52 * 51 * 50 * 49 * 48 / (5 * 4 * 3 * 2))
+	if total*int64(b.N) != S {
+		b.Fatalf("sums are wrong. Expected %d hands, but got %d", total*int64(b.N), S)
+	}
+	b.Logf("1 op is %d 5-card hands\n", total)
+
 }
 
 func BenchmarkEval7(b *testing.B) {
+	var S int64
 	for i := 0; i < b.N; i++ {
 		var T int64
 		for a := Card(0); a < Card(52); a++ {
@@ -147,6 +155,7 @@ func BenchmarkEval7(b *testing.B) {
 								for g := Card(f) + 1; g < Card(52); g++ {
 									h := [7]Card{a, b, c, d, e, f, g}
 									T += int64(Eval7(&h))
+									S++
 								}
 							}
 						}
@@ -159,7 +168,11 @@ func BenchmarkEval7(b *testing.B) {
 			panic("x")
 		}
 	}
-	fmt.Printf("evaluated %d 7-card hands\n", b.N*52*51*50*49*48*47*45/(7*6*5*4*3*2))
+	total := int64(52 * 51 * 50 * 49 * 48 * 47 * 46 / (7 * 6 * 5 * 4 * 3 * 2))
+	if total*int64(b.N) != S {
+		b.Fatalf("sums are wrong. Expected %d hands, but got %d", total*int64(b.N), S)
+	}
+	b.Logf("1 op is %d 7-card hands\n", total)
 }
 
 func TestTables(t *testing.T) {
