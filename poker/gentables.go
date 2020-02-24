@@ -42,7 +42,7 @@ func (g *genner) get(key hand64Canonical) (*tblNode, bool) {
 	if ok {
 		return n, true
 	}
-	n = &tblNode{Index: len(g.cache)}
+	n = &tblNode{}
 	g.cache[key] = n
 	return n, false
 }
@@ -135,6 +135,22 @@ func (g *genner) genworker(ncards int) {
 	}
 }
 
+func indexNodes(node *tblNode) {
+	done := map[*tblNode]bool{}
+	nodes := []*tblNode{node}
+	for i := 0; i < len(nodes); i++ {
+		nodes[i].Index = i
+		for j := 0; j < 52; j++ {
+			nn := nodes[i].T[j].N
+			if nn == nil || done[nn] {
+				continue
+			}
+			done[nn] = true
+			nodes = append(nodes, nn)
+		}
+	}
+}
+
 func gentree(ncards int) *tblNode {
 	g := &genner{
 		cache: map[hand64Canonical]*tblNode{},
@@ -154,6 +170,7 @@ func gentree(ncards int) *tblNode {
 	g.wg.Wait()
 	close(g.work)
 	wg.Wait()
+	indexNodes(node)
 	return node
 }
 
