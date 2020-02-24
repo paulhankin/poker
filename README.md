@@ -4,6 +4,9 @@ Poker hand evaluator
 This go package provides a fast poker hand evaluator for 3-card,
 5-card and 7-card hands.
 
+When benchmarking on my machine, I get around 36 million 5-card
+evaluations per second, or roughly 100 cycles per eval.
+
 It works using the same principles as the [2+2 hand evaluator](http://archives1.twoplustwo.com/showflat.php?Cat=0&Number=8513906).
 It uses a huge state machine, with 52 transitions out for each state representing
 52 possible next cards. The final nodes contain 52 ranks for each of the
@@ -22,6 +25,10 @@ of this could further reduce the size of the state table. This isn't done yet).
 NOTE! You probably want to build any program that depends on
 this package with "-tags staticdata" for releases to avoid a several-second
 startup time. See the section on build modes.
+
+TODO: further state merging as described above, and rewrite the eval code
+in assembler, to avoid bounds checking. I guess the suit transforms can
+be written faster.
 
 Build modes
 -----------
