@@ -40,6 +40,30 @@ func TestEval5Single(t *testing.T) {
 	}
 }
 
+func TestEval3(t *testing.T) {
+	// Generate every 3-card hand in every permutation, and check we get
+	// the same with Eval3 as with EvalSlow.
+	for a := Card(0); a < Card(52); a++ {
+		for b := Card(a) + 1; b < Card(52); b++ {
+			for c := Card(b) + 1; c < Card(52); c++ {
+				wantEval := EvalSlow([]Card{a, b, c})
+				for perms := 0; perms < 6; perms++ {
+					p := perms
+					h := [3]Card{a, b, c}
+					for i := 0; i < 3; i++ {
+						h[i], h[i+perms%(3-i)] = h[i+perms%(3-i)], h[i]
+						p /= (3 - i)
+					}
+					gotEval := Eval3(&h)
+					if gotEval != wantEval {
+						t.Errorf("%v.Eval3() == %d, want %d", h, gotEval, wantEval)
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestEval5(t *testing.T) {
 	fails := 0
 	skipped := 0

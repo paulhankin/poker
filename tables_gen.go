@@ -3,6 +3,7 @@ package poker
 var (
 	rootNode7table [163060 * 52]uint32
 	rootNode5table [3459 * 52]uint32
+	rootNode3table [16 * 16 * 16]int16
 )
 
 func genTables(ncards int, indextable []uint32, node *tblNode, done []bool) {
@@ -25,7 +26,22 @@ func genTables(ncards int, indextable []uint32, node *tblNode, done []bool) {
 	}
 }
 
+func genTables3(indextable []int16) {
+	var cards [3]Card
+	for i := 0; i < 13; i++ {
+		cards[0], _ = MakeCard(Club, Rank(1+i))
+		for j := 0; j < 13; j++ {
+			cards[1], _ = MakeCard(Diamond, Rank(1+j))
+			for k := 0; k < 13; k++ {
+				cards[2], _ = MakeCard(Heart, Rank(1+k))
+				indextable[i*256+j*16+k] = EvalSlow(cards[:])
+			}
+		}
+	}
+}
+
 func init() {
 	genTables(5, rootNode5table[:], rootNode5(), make([]bool, len(rootNode5table)))
 	genTables(7, rootNode7table[:], rootNode7(), make([]bool, len(rootNode7table)))
+	genTables3(rootNode3table[:])
 }
