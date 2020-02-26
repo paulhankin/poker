@@ -230,13 +230,9 @@ func Eval3(hand *[3]Card) int16 {
 // Eval5 evaluates a 5-card poker hand, returning a rank for the hand
 // from 0 to MaxScore (inclusive).
 func Eval5(hand *[5]Card) int16 {
-	idx := 0
-	tx := suitTransformByteIdentity
-	var v uint32
-
-	v = rootNode5table[idx+int(tx.Apply(hand[0]))]
-	tx = tx.Compose(suitTransformByte(v))
-	idx = int(v >> 8)
+	v := rootNode5table[hand[0]]
+	tx := suitTransformByte(v)
+	idx := int(v >> 8)
 
 	v = rootNode5table[idx+int(tx.Apply(hand[1]))]
 	tx = tx.Compose(suitTransformByte(v))
@@ -256,13 +252,9 @@ func Eval5(hand *[5]Card) int16 {
 // Eval7 evaluates a 7-card poker hand, returning a rank for the hand
 // from 0 to MaxScore (inclusive).
 func Eval7(hand *[7]Card) int16 {
-	idx := 0
-	tx := suitTransformByteIdentity
-	var v uint32
-
-	v = rootNode7table[idx+int(tx.Apply(hand[0]))]
-	tx = tx.Compose(suitTransformByte(v))
-	idx = int(v >> 8)
+	v := rootNode7table[hand[0]]
+	tx := suitTransformByte(v)
+	idx := int(v >> 8)
 
 	v = rootNode7table[idx+int(tx.Apply(hand[1]))]
 	tx = tx.Compose(suitTransformByte(v))
