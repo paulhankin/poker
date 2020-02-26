@@ -5,9 +5,9 @@ This go package provides a fast poker hand evaluator for 3-card,
 5-card and 7-card hands.
 
 When benchmarking on my machine, on a single core I get around
-36 million 5-card evaluations per second, or roughly 100 CPU cycles
-per eval. And 25 million 7-card evaluations per second, or
-roughly 150 cycles per eval.
+79 million 5-card evaluations per second, or roughly 47 CPU cycles
+per eval. And 50 million 7-card evaluations per second, or
+roughly 73 cycles per eval.
 
 It works using the same principles as the [2+2 hand evaluator](http://archives1.twoplustwo.com/showflat.php?Cat=0&Number=8513906).
 It uses a huge state machine, with 52 transitions out for each state representing
@@ -19,7 +19,8 @@ eval is only 3459, and 163060 for the 7-card eval.
 
 The novelty (or at least, I think it's novel) is that each transition
 includes a remapping of suits to be applied to future cards, which greatly
-reduces the number of states. (It could also be used to limit the number
+reduces the number of states. This remapping is done via relatively
+small lookup tables. (It could also be used to limit the number
 of transitions for later states, where there are only effectively 2 suits:
 the suit where a flush is possible, and the other suits. Clever use
 of this could further reduce the size of the state table. This isn't done yet).

@@ -162,11 +162,29 @@ func (st suitTransform) Byte() suitTransformByte {
 	return suitTransformByte(st[0] | (st[1] << 2) | (st[2] << 4) | (st[3] << 6))
 }
 
-func (st suitTransformByte) Apply(c Card) Card {
+func (st suitTransformByte) apply(c Card) Card {
 	return Card(st>>(2*(c&3))&3) | (c &^ 3)
 }
 
+var applyTable = func() [256 * 64]Card {
+	var r [256 * 64]Card
+	for i := 0; i < 256; i++ {
+		for j := 0; j < 52; j++ {
+			r[64*i+j] = suitTransformByte(i).apply(Card(j))
+		}
+	}
+	return r
+}()
+
+func (st suitTransformByte) Apply(c Card) Card {
+	return applyTable[int(st)*64+int(c)]
+}
+
 func (st suitTransformByte) Compose(st2 suitTransformByte) suitTransformByte {
+	return composeTable[int(st)*256+int(st2)]
+}
+
+func (st suitTransformByte) compose(st2 suitTransformByte) suitTransformByte {
 	var r suitTransformByte
 	r = (st2 >> (2 * (st & 3))) & 3
 	r |= ((st2 >> (2 * ((st >> 2) & 3))) & 3) << 2
@@ -174,6 +192,16 @@ func (st suitTransformByte) Compose(st2 suitTransformByte) suitTransformByte {
 	r |= ((st2 >> (2 * ((st >> 6) & 3))) & 3) << 6
 	return r
 }
+
+var composeTable = func() [256 * 256]suitTransformByte {
+	var r [256 * 256]suitTransformByte
+	for i := 0; i < 256; i++ {
+		for j := 0; j < 256; j++ {
+			r[i*256+j] = suitTransformByte(i).compose(suitTransformByte(j))
+		}
+	}
+	return r
+}()
 
 func (st suitTransformByte) Long() suitTransform {
 	return suitTransform{uint8(st & 3), uint8((st >> 2) & 3), uint8((st >> 4) & 3), uint8((st >> 6) & 3)}
