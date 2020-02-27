@@ -1,2 +1,5 @@
 poker.test
-profile.out
+/profile.*
+old.txt
+new.txt
+/holdemeval
