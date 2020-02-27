@@ -355,54 +355,88 @@ func nextIdx(ix []int, k int, dupes int) bool {
 	}
 }
 
+func mustMakeCard(s Suit, r Rank) Card {
+	c, err := MakeCard(s, r)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
 func makeEvalInfo() *evalInfos {
 	ei := &evalInfos{}
-
 	uniqScores := map[int]bool{}
-	hand5, hand3 := map[int][]Card{}, map[int][]Card{}
-	for _, size := range []int{3, 5} {
-		indexes := make([]int, size)
-		hand := make([]Card, size)
-		// We iterate over enough hands to categorize _all_ hands.
-		// For non-flush hands we allow duplicate cards (eg: pairs)
-		// but fix the suits. For flush hands, we don't allow duplicate
-		// cards, and fix the suit to be spades.
-		s := []Suit{Club, Diamond, Heart, Spade, Club}
-		flushTop := size / 5 // 0 if size=3, 1 if size=5.
-		for flush := 0; flush <= flushTop; flush++ {
-			if flush == 1 {
-				for i := range indexes {
-					indexes[i] = i
-				}
-			}
-			for {
-				for i, ix := range indexes {
-					suit := Spade
-					if flush == 0 {
-						suit = s[i]
-					}
-					var err error
-					hand[i], err = MakeCard(suit, Rank(ix+1))
-					if err != nil {
-						log.Fatalf("failed to create card: %s", err)
-					}
-				}
-				ev, err := evalSlow(hand, true, false)
+
+	// Enumerate enough 3-card hands to categorize all hands.
+	// There's no flushes, so suits are not important except
+	// that there can't be duplicate cards.
+	hand3 := map[int][]Card{}
+	for a := 0; a < 13; a++ {
+		carda := mustMakeCard(Club, Rank(a+1))
+		for b := a; b < 13; b++ {
+			cardb := mustMakeCard(Diamond, Rank(b+1))
+			for c := b; c < 13; c++ {
+				cardc := mustMakeCard(Heart, Rank(c+1))
+				h3 := []Card{carda, cardb, cardc}
+				ev, err := evalSlow(h3, true, false)
 				if err != nil {
-					log.Fatalf("evalSlow(%v) gave error %s", hand, err)
+					panic(err)
 				}
-				if size == 3 {
-					hand3[ev.rank] = append([]Card{}, hand...)
-				} else {
-					hand5[ev.rank] = append([]Card{}, hand...)
-				}
+				hand3[ev.rank] = h3
 				uniqScores[ev.rank] = true
-				if !nextIdx(indexes, 13, 1-flush) {
-					break
+			}
+		}
+	}
+	hand5 := map[int][]Card{}
+
+	// Enumerate all 5-card flush hands.
+	for a := 0; a < 13; a++ {
+		carda := mustMakeCard(Club, Rank(a+1))
+		for b := a + 1; b < 13; b++ {
+			cardb := mustMakeCard(Club, Rank(b+1))
+			for c := b + 1; c < 13; c++ {
+				cardc := mustMakeCard(Club, Rank(c+1))
+				for d := c + 1; d < 13; d++ {
+					cardd := mustMakeCard(Club, Rank(d+1))
+					for e := d + 1; e < 13; e++ {
+						carde := mustMakeCard(Club, Rank(e+1))
+						h5 := []Card{carda, cardb, cardc, cardd, carde}
+						ev, err := evalSlow(h5, true, false)
+						if err != nil {
+							panic(err)
+						}
+						hand5[ev.rank] = h5
+						uniqScores[ev.rank] = true
+					}
 				}
 			}
 		}
 	}
+
+	// Enumerate all 5-card non-flush hands.
+	for a := 0; a < 13; a++ {
+		carda := mustMakeCard(Club, Rank(a+1))
+		for b := a; b < 13; b++ {
+			cardb := mustMakeCard(Diamond, Rank(b+1))
+			for c := b; c < 13; c++ {
+				cardc := mustMakeCard(Heart, Rank(c+1))
+				for d := c; d < 13; d++ {
+					cardd := mustMakeCard(Spade, Rank(d+1))
+					for e := d; e < 13; e++ {
+						carde := mustMakeCard(Club, Rank(e+1))
+						h5 := []Card{carda, cardb, cardc, cardd, carde}
+						ev, err := evalSlow(h5, true, false)
+						if err != nil {
+							panic(err)
+						}
+						hand5[ev.rank] = h5
+						uniqScores[ev.rank] = true
+					}
+				}
+			}
+		}
+	}
+
 	// Aggregate and pack scores.
 	allScores := []int{}
 	for k := range uniqScores {

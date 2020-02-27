@@ -218,18 +218,18 @@ func TestToHand(t *testing.T) {
 			h1, ok = EvalToHand5(EvalSlow(h0))
 		}
 		if !ok {
-			t.Fatalf("EvalToHand(%s) failed. Eval=%d", h0, EvalSlow(h0))
+			t.Fatalf("EvalToHand(%v) failed. Eval=%d", h0, EvalSlow(h0))
 		}
 		want, err := DescribeShort(h0)
 		if err != nil {
-			t.Fatalf("DescribeShort(%s) gave error %s", h0, err)
+			t.Fatalf("DescribeShort(%v) gave error %s", h0, err)
 		}
 		got, err := DescribeShort(h1)
 		if err != nil {
-			t.Fatalf("DescribeShort(%s) gave error %s", h1, err)
+			t.Fatalf("DescribeShort(%v) gave error %s", h1, err)
 		}
 		if got != want {
-			t.Errorf("EvalToHand(%s) = %s, want %s", h0, got, want)
+			t.Errorf("EvalToHand(%v) = %s, want %s", h0, got, want)
 		}
 	}
 }
