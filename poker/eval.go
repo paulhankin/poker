@@ -365,8 +365,6 @@ func mustMakeCard(s Suit, r Rank) Card {
 
 func makeEvalInfo() *evalInfos {
 	ei := &evalInfos{}
-	uniqScores := map[int]bool{}
-
 	// Enumerate enough 3-card hands to categorize all hands.
 	// There's no flushes, so suits are not important except
 	// that there can't be duplicate cards.
@@ -382,8 +380,9 @@ func makeEvalInfo() *evalInfos {
 				if err != nil {
 					panic(err)
 				}
-				hand3[ev.rank] = h3
-				uniqScores[ev.rank] = true
+				if _, ok := hand3[ev.rank]; !ok {
+					hand3[ev.rank] = h3
+				}
 			}
 		}
 	}
@@ -405,8 +404,9 @@ func makeEvalInfo() *evalInfos {
 						if err != nil {
 							panic(err)
 						}
-						hand5[ev.rank] = h5
-						uniqScores[ev.rank] = true
+						if _, ok := hand5[ev.rank]; !ok {
+							hand5[ev.rank] = h5
+						}
 					}
 				}
 			}
@@ -429,8 +429,9 @@ func makeEvalInfo() *evalInfos {
 						if err != nil {
 							panic(err)
 						}
-						hand5[ev.rank] = h5
-						uniqScores[ev.rank] = true
+						if _, ok := hand5[ev.rank]; !ok {
+							hand5[ev.rank] = h5
+						}
 					}
 				}
 			}
@@ -439,7 +440,10 @@ func makeEvalInfo() *evalInfos {
 
 	// Aggregate and pack scores.
 	allScores := []int{}
-	for k := range uniqScores {
+	for k := range hand3 {
+		allScores = append(allScores, k)
+	}
+	for k := range hand5 {
 		allScores = append(allScores, k)
 	}
 	sort.Ints(allScores)
