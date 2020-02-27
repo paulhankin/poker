@@ -60,7 +60,7 @@ func Describe(c []Card) (string, error) {
 	return strings.TrimRight(eval.desc, "-"), nil
 }
 
-// Describe describes a 3, 5 or 7 card poker hand with enough detail
+// DescribeShort describes a 3, 5 or 7 card poker hand with enough detail
 // to compare it to another poker hand which shares no cards in common.
 // For example, KKK-87 is represented as KKK-x-y since the kickers can
 // never matter (except that they are different).
@@ -306,7 +306,8 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 	return eval{}, fmt.Errorf("failed to eval hand %v", c)
 }
 
-// ScoreMax is the largest possible result from Eval (with replace=true).
+// ScoreMax is the largest possible rank of hand returned by the Eval
+// functions
 const ScoreMax = 7929
 
 type evalInfos struct {
@@ -338,6 +339,8 @@ func EvalToHand3(e int16) ([]Card, bool) {
 // EvalSlow takes a 3-, 5- or 7- card poker hand and returns a number
 // which can be used to rank it against other poker hands.
 // The returned value is in the range 0 to ScoreMax.
+// This function should not generally be used, and Eval3, Eval5 or Eval7
+// used instead. It uses a straightforward algorithm for hand-ranking.
 func EvalSlow(c []Card) int16 {
 	ev, _ := evalSlow(c, true, false)
 	return evalInfo.slowRankToPacked[ev.rank]

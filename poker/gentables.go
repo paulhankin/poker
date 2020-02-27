@@ -222,13 +222,14 @@ func nodeEval5(hand *[5]Card) int16 {
 	return rank
 }
 
-// Eval3 evaluates a 3-card poker hand, returning a rank for the hand.
+// Eval3 evaluates a 3-card poker hand, returning a rank for the hand from
+// 0 to ScoreMax (inclusive).
 func Eval3(hand *[3]Card) int16 {
 	return rootNode3table[int(hand[0]>>2)<<8+int(hand[1]>>2)<<4+int(hand[2]>>2)]
 }
 
 // Eval5 evaluates a 5-card poker hand, returning a rank for the hand
-// from 0 to MaxScore (inclusive).
+// from 0 to ScoreMax (inclusive).
 func Eval5(hand *[5]Card) int16 {
 	v := rootNode5table[hand[0]]
 	tx := suitTransformByte(v)
@@ -250,7 +251,7 @@ func Eval5(hand *[5]Card) int16 {
 }
 
 // Eval7 evaluates a 7-card poker hand, returning a rank for the hand
-// from 0 to MaxScore (inclusive).
+// from 0 to ScoreMax (inclusive).
 func Eval7(hand *[7]Card) int16 {
 	v := rootNode7table[hand[0]]
 	tx := suitTransformByte(v)
@@ -281,6 +282,7 @@ func Eval7(hand *[7]Card) int16 {
 
 // InternalTables returns the tables of data used in the
 // optimized 3- 5- and 7- card evaluators.
+// The contents of these three tables is subect to change.
 func InternalTables() (tbl3 []int16, tbl5, tbl6 []uint32) {
 	return rootNode3table[:], rootNode5table[:], rootNode7table[:]
 }

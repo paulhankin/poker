@@ -20,10 +20,15 @@ import (
 // in that suit.
 // Eg: in KhQhTx8x, the T, 8 must be different non-heart suits.
 // In AxKxQxJx, all four cards must be different suits.
+// Mostly, consumers of this package should not be concerned with the
+// existenct of the x suit.
 type Card uint8
 
+// A Hand is a collection of cards, for example the hole cards for
+// a player in Texas Hold'em, or the hole cards plus the 5 board cards.
 type Hand []Card
 
+// String returns a string form of a hand.
 func (h Hand) String() string {
 	var parts []string
 	for _, c := range h {
@@ -61,6 +66,9 @@ func (c Card) RawRank() int {
 	return (int(c.Rank()) + 11) % 13
 }
 
+// String returns the string form of a card. It is the suit
+// as a single character C,D,H,S, and the rank, which is a
+// single character 2-9, T, J, Q, K, A.
 func (c Card) String() string {
 	return c.Suit().String() + c.Rank().String()
 }
@@ -86,6 +94,8 @@ var suits = map[Suit]string{
 	xSuit:   "x",
 }
 
+// String returns the string form of a suit, as a single character
+// C, D, H, S.
 func (s Suit) String() string {
 	r, ok := suits[s]
 	if !ok {
