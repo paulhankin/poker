@@ -35,7 +35,7 @@ func (h Hand) String() string {
 // Suit returns the suit of a card.
 func (c Card) Suit() Suit {
 	if c > 127 {
-		return XSuit
+		return xSuit
 	}
 	return Suit(c & 3)
 }
@@ -74,7 +74,7 @@ const (
 	Heart   = Suit(2)
 	Spade   = Suit(3)
 
-	XSuit   = Suit(254)
+	xSuit   = Suit(254)
 	BadSuit = Suit(255)
 )
 
@@ -83,7 +83,7 @@ var suits = map[Suit]string{
 	Diamond: "D",
 	Heart:   "H",
 	Spade:   "S",
-	XSuit:   "x",
+	xSuit:   "x",
 }
 
 func (s Suit) String() string {
@@ -113,7 +113,9 @@ func MakeCard(s Suit, r Rank) (Card, error) {
 	return Card(r-1)*4 + Card(s), nil
 }
 
-func (c Card) XSuit() Card {
+// xSuit makes a version of the card with the suit replaced by x, the
+// special anonymous suit.
+func (c Card) xSuit() Card {
 	return Card(c.Rank()-1)*4 + 128
 }
 

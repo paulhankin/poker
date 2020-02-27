@@ -104,14 +104,14 @@ func (hc hand64Canonical) exemplar(n int, botNew bool) hand64 {
 	h := hand64(hc)
 	for i := 0; i < n; i++ {
 		s := h.Card(i).Suit()
-		if s != XSuit && (i > 0 || !botNew) {
+		if s != xSuit && (i > 0 || !botNew) {
 			suits |= 1 << s
 		}
 	}
 	ns := 0
 	botCard := h.Card(0)
 	for i := 0; i < n; i++ {
-		if h.Card(i).Suit() != XSuit {
+		if h.Card(i).Suit() != xSuit {
 			continue
 		}
 		var nc Card = 0xff
@@ -246,7 +246,7 @@ func (h hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, suitTran
 	nextSuit := 0
 	for i := 0; i < 4; i++ {
 		if csuits[i].n+(finalN-n) < 5 {
-			si[i] = int(XSuit)
+			si[i] = int(xSuit)
 		} else {
 			si[i] = nextSuit
 			nextSuit++
@@ -260,7 +260,7 @@ func (h hand64) CanonicalWithTransform(n, finalN int) (hand64Canonical, suitTran
 			}
 			cr := (jj + 1) % 13
 			card := (cr << 2) | si[i]
-			if si[i] == int(XSuit) {
+			if si[i] == int(xSuit) {
 				card = (cr << 2) | 128
 			}
 			hs = (hs << 8) | hand64Canonical(card)
