@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-//go:generate go run ./gen_tables_static.go
+//go:generate go run -tags gendata ./gen_tables_static.go
 
 type tblTransition struct {
 	rank int16 // for terminal nodes

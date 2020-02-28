@@ -72,7 +72,7 @@ func writeSource() {
 		_, werr = fmt.Fprintf(f, v, args...)
 	}
 	wf(`
-// +build staticdata
+// +build !gendata,!filedata
 
 package poker
 
