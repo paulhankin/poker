@@ -8,34 +8,11 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
 	"github.com/paulhankin/poker/v2/poker"
 )
-
-type byteWriter struct {
-	f io.Writer
-	n int
-}
-
-func (bw *byteWriter) Write(p []byte) (int, error) {
-	i := bw.n
-	for _, b := range p {
-		if i%16 == 0 {
-			if _, err := fmt.Fprintf(bw.f, "\n\t"); err != nil {
-				return 0, err
-			}
-		}
-		if _, err := fmt.Fprintf(bw.f, "0x%02x,", b); err != nil {
-			return 0, err
-		}
-		i++
-	}
-	bw.n = i
-	return len(p), nil
-}
 
 func writeFile() {
 	f, err := os.Create("poker.dat")
