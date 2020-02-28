@@ -76,6 +76,7 @@ func (c Card) String() string {
 // A Suit is a suit: clubs, diamonds, hearts or spades.
 type Suit uint8
 
+// Suits
 const (
 	Club    = Suit(0)
 	Diamond = Suit(1)

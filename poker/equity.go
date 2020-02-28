@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Equity contains information about poker hand equity.
 type Equity struct {
 	Equity float64 // total equity in the pot
 	Win    float64 // equity gained from outright winning the pot
@@ -79,7 +80,7 @@ func getRemainingDeck(hands [][2]Card, board []Card) ([]Card, error) {
 		return nil, fmt.Errorf("duplicate cards: %v found", dups)
 	}
 	if len(board) > 5 {
-		return nil, fmt.Errorf("board %s has more than 5 (%d) cards.", boardString(board), len(board))
+		return nil, fmt.Errorf("board %s has more than 5 (%d) cards", boardString(board), len(board))
 	}
 
 	// deck is all the cards that aren't already in a hand or board.

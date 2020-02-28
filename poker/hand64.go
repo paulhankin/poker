@@ -42,10 +42,10 @@ func (h hand64) CardsN(n int) []Card {
 // The card can't be added if:
 //  - it's already in the hand
 //  - it would result in 5 cards of the same rank in the hand
-func (h hand64Canonical) Add(n int, c Card) (hand64, bool) {
+func (hc hand64Canonical) Add(n int, c Card) (hand64, bool) {
 	rc := 0
 	for i := 0; i < n; i++ {
-		ci := hand64(h).Card(i)
+		ci := hand64(hc).Card(i)
 		if ci == c {
 			return 0, false
 		}
@@ -56,7 +56,7 @@ func (h hand64Canonical) Add(n int, c Card) (hand64, bool) {
 	if rc >= 4 {
 		return 0, false
 	}
-	return ((h << 8) | hand64Canonical(c)).exemplar(n+1, true), true
+	return ((hc << 8) | hand64Canonical(c)).exemplar(n+1, true), true
 }
 
 func (h hand64) String(n int) string {

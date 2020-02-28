@@ -151,7 +151,7 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		cr := (int(ci>>2) & 15) + 1
 		rawr := (cr + 11) % 13
 		rankBits[ranks[rawr]] |= 1 << rawr
-		ranks[rawr] += 1
+		ranks[rawr]++
 		dupes[ranks[rawr]]++
 		dupes[ranks[rawr]-1]--
 		for i := 0; i < 5; i++ {
@@ -177,9 +177,8 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		e, rankBits[0] = poptop(rankBits[0])
 		if text {
 			return evalScore("%s-%s-%s-%s-%s", 0, a, b, c, d, e), nil
-		} else {
-			return evalScore5(0, a, b, c, d, e), nil
 		}
+		return evalScore5(0, a, b, c, d, e), nil
 	}
 	if dupes[2] == 1 && dupes[3] == 0 { // One pair
 		var p, a, b, c int
@@ -189,9 +188,8 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		c, rankBits[0] = poptop(rankBits[0])
 		if text {
 			return evalScore("%[1]s%[1]s-%s-%s-%s", 1, p, a, b, c), nil
-		} else {
-			return evalScore5(1, p, a, b, c, 0), nil
 		}
+		return evalScore5(1, p, a, b, c, 0), nil
 	}
 	if dupes[2] == 2 { // Two pair
 		var p, q, a int
@@ -200,9 +198,8 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		a, rankBits[0] = poptop(rankBits[0])
 		if text {
 			return evalScore("%[1]s%[1]s-%[2]s%[2]s-%[3]s", 2, p, q, a), nil
-		} else {
-			return evalScore5(2, p, q, a, 0, 0), nil
 		}
+		return evalScore5(2, p, q, a, 0, 0), nil
 	}
 	if dupes[3] == 1 && dupes[2] == 0 { // Trips
 		if replace {
@@ -212,33 +209,29 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 			t, rankBits[2] = poptop(rankBits[2])
 			if text {
 				return evalScore("%[1]s%[1]s%[1]s-%s-%s", 3, t, a, b), nil
-			} else {
-				return evalScore5(3, t, a, b, 0, 0), nil
 			}
+			return evalScore5(3, t, a, b, 0, 0), nil
 		}
 		if len(c) == 5 {
 			var t int
 			t, rankBits[2] = poptop(rankBits[2])
 			if text {
 				return evalScore("%[1]s%[1]s%[1]s-x-y", 3, t), nil // ignore kickers
-			} else {
-				return evalScore5(3, t, 0, 0, 0, 0), nil
 			}
+			return evalScore5(3, t, 0, 0, 0, 0), nil
 		}
 		var t int
 		t, rankBits[2] = poptop(rankBits[2])
 		if text {
 			return evalScore("%[1]s%[1]s%[1]s", 3, t), nil
-		} else {
-			return evalScore5(3, t, 0, 0, 0, 0), nil
 		}
+		return evalScore5(3, t, 0, 0, 0, 0), nil
 	}
 	if str8top != 0 && !flush { // Straight
 		if text {
 			return evalScore("%s straight", 4, (str8top+11)%13+2), nil
-		} else {
-			return evalScore5(4, (str8top+11)%13+2, 0, 0, 0, 0), nil
 		}
+		return evalScore5(4, (str8top+11)%13+2, 0, 0, 0, 0), nil
 	}
 	if flush && str8top == 0 { // Flush
 		var a, b, c, d, e int
@@ -249,9 +242,8 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		e, rankBits[0] = poptop(rankBits[0])
 		if text {
 			return evalScore("%s%s%s%s%s flush", 5, a, b, c, d, e), nil
-		} else {
-			return evalScore5(5, a, b, c, d, e), nil
 		}
+		return evalScore5(5, a, b, c, d, e), nil
 	}
 	if dupes[2] == 1 && dupes[3] == 1 { // Full house
 		var t, p int
@@ -260,15 +252,13 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		if replace {
 			if text {
 				return evalScore("%[1]s%[1]s%[1]s-%[2]s%[2]s", 6, t, p), nil
-			} else {
-				return evalScore5(6, t, p, 0, 0, 0), nil
 			}
+			return evalScore5(6, t, p, 0, 0, 0), nil
 		}
 		if text {
 			return evalScore("%[1]s%[1]s%[1]s-xx", 6, t), nil // ignore lower pair
-		} else {
-			return evalScore5(6, t, 0, 0, 0, 0), nil // ignore lower pair
 		}
+		return evalScore5(6, t, 0, 0, 0, 0), nil // ignore lower pair
 	}
 	if dupes[4] == 1 { // Quads
 		var q, a int
@@ -277,31 +267,27 @@ func evalSlow(c []Card, replace, text bool) (eval, error) {
 		if replace {
 			if text {
 				return evalScore("%[1]s%[1]s%[1]s%[1]s-%[2]s", 7, q, a), nil
-			} else {
-				return evalScore5(7, q, a, 0, 0, 0), nil
 			}
+			return evalScore5(7, q, a, 0, 0, 0), nil
 		}
 		if text {
 			return evalScore("%[1]s%[1]s%[1]s%[1]s-x", 7, q), nil // ignore kicker
-		} else {
-			return evalScore5(7, q, 0, 0, 0, 0), nil
 		}
+		return evalScore5(7, q, 0, 0, 0, 0), nil
 	}
 	if str8top != 0 && flush { // Straight flush
 		if text {
 			return evalScore("%s straight flush", 8, (str8top+11)%13+2), nil
-		} else {
-			return evalScore5(8, (str8top+11)%13+2, 0, 0, 0, 0), nil
 		}
+		return evalScore5(8, (str8top+11)%13+2, 0, 0, 0, 0), nil
 	}
 	if dupes[5] == 1 { // 5-kind
 		var q int
 		q, rankBits[4] = poptop(rankBits[4])
 		if text {
 			return evalScore("%[1]s%[1]s%[1]s%[1]s%[1]s", 9, q), nil
-		} else {
-			return evalScore5(9, q, 0, 0, 0, 0), nil
 		}
+		return evalScore5(9, q, 0, 0, 0, 0), nil
 	}
 	return eval{}, fmt.Errorf("failed to eval hand %v", c)
 }
