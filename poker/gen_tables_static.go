@@ -41,32 +41,27 @@ func writeSource() {
 	}
 	f := bufio.NewWriter(rf)
 	tbl3, tbl5, tbl7 := poker.InternalTables()
-	var werr error
-	wf := func(v string, args ...interface{}) {
-		if werr != nil {
-			return
-		}
-		_, werr = fmt.Fprintf(f, v, args...)
-	}
-	wf(`
+	if _, err := fmt.Fprint(f, `
 // +build !gendata,!filedata
 
 package poker
 
-var pokerTableData = []uint8("`)
+var pokerTableData = []uint8("`); err != nil {
+		log.Fatal(err)
+	}
 	e64 := base64.NewEncoder(base64.RawStdEncoding, f)
 	zs := gzip.NewWriter(e64)
 	fmt.Println("writing 7 table")
 	if err := binary.Write(zs, binary.LittleEndian, tbl7[:]); err != nil {
-		log.Fatalf("failed to write data: %v", err)
+		log.Fatal(err)
 	}
 	fmt.Println("writing 5 table")
 	if err := binary.Write(zs, binary.LittleEndian, tbl5[:]); err != nil {
-		log.Fatalf("failed to write data: %v", err)
+		log.Fatal(err)
 	}
 	fmt.Println("writing 3 table")
 	if err := binary.Write(zs, binary.LittleEndian, tbl3[:]); err != nil {
-		log.Fatalf("failed to write data: %v", err)
+		log.Fatal(err)
 	}
 	if err := zs.Close(); err != nil {
 		log.Fatalf("failed to close gzip: %v", err)
@@ -74,16 +69,14 @@ var pokerTableData = []uint8("`)
 	if err := e64.Close(); err != nil {
 		log.Fatalf("failed to close base64 encoder", err)
 	}
-	wf("\")\n")
-
-	if werr != nil {
-		log.Fatalf("write error: %v", werr)
+	if _, err := fmt.Fprint(f, "\")\n"); err != nil {
+		log.Fatal(err)
 	}
-	if werr = f.Flush(); werr != nil {
-		log.Fatalf("failed to flush data: %v", werr)
+	if err := f.Flush(); err != nil {
+		log.Fatalf("failed to flush data: %v", err)
 	}
-	if werr = rf.Close(); werr != nil {
-		log.Fatalf("failed to close file: %v", werr)
+	if err := rf.Close(); err != nil {
+		log.Fatalf("failed to close file: %v", err)
 	}
 }
 
