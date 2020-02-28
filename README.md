@@ -49,9 +49,9 @@ file must be in the current directory, and it's loaded at startup time.
 Timings on my workstation to build and run "cmd/holdemeval", running with
 arguments `./holdemeval -hands "AdAh QsQd 6c5c"`:
 
-    * default (`-tags staticdata`): 0.60sec to build, 0.34sec to run
-    * `-tags gendata` : 0.17sec to build, 2.2sec to run
-    * `-tags filedata`: 0.17sec to build, 0.19sec to run
+   * default (`staticdata`): 0.60sec to build, 0.34sec to run
+   * `-tags gendata` : 0.17sec to build, 2.2sec to run
+   * `-tags filedata`: 0.17sec to build, 0.19sec to run
 
 The run times differ because `-tags filedata` reads the raw data
 from a file, `staticdata` has to decompress the data before
