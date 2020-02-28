@@ -5,6 +5,7 @@ package poker
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"encoding/binary"
 )
 
@@ -16,7 +17,8 @@ var (
 
 func init() {
 	rf := bytes.NewReader(pokerTableData)
-	f, err := gzip.NewReader(rf)
+	d64f := base64.NewDecoder(base64.RawStdEncoding, rf)
+	f, err := gzip.NewReader(d64f)
 	if err != nil {
 		panic(err)
 	}
@@ -27,6 +29,9 @@ func init() {
 		panic(err)
 	}
 	if err := binary.Read(f, binary.LittleEndian, rootNode3table[:]); err != nil {
+		panic(err)
+	}
+	if err := f.Close(); err != nil {
 		panic(err)
 	}
 }

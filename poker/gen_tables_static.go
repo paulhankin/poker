@@ -5,6 +5,7 @@ package main
 import (
 	"bufio"
 	"compress/gzip"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -75,8 +76,9 @@ func writeSource() {
 
 package poker
 
-var pokerTableData = []uint8{`)
-	zs := gzip.NewWriter(&byteWriter{f: f})
+var pokerTableData = []uint8("`)
+	e64 := base64.NewEncoder(base64.RawStdEncoding, f)
+	zs := gzip.NewWriter(e64)
 	fmt.Println("writing 7 table")
 	if err := binary.Write(zs, binary.LittleEndian, tbl7[:]); err != nil {
 		log.Fatalf("failed to write data: %v", err)
@@ -92,7 +94,10 @@ var pokerTableData = []uint8{`)
 	if err := zs.Close(); err != nil {
 		log.Fatalf("failed to close gzip: %v", err)
 	}
-	wf("\n}\n")
+	if err := e64.Close(); err != nil {
+		log.Fatalf("failed to close base64 encoder", err)
+	}
+	wf("\")\n")
 
 	if werr != nil {
 		log.Fatalf("write error: %v", werr)
