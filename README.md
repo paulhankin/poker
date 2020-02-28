@@ -25,10 +25,6 @@ of transitions for later states, where there are only effectively 2 suits:
 the suit where a flush is possible, and the other suits. Clever use
 of this could further reduce the size of the state table. This isn't done yet).
 
-NOTE! You probably want to build any program that depends on
-this package with "-tags staticdata" for releases to avoid a several-second
-startup time. See the section on build modes.
-
 TODO: further state merging as described above, and rewrite the eval code
 in assembler, to avoid bounds checking. I guess the suit transforms can
 be written faster.
