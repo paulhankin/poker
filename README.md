@@ -51,11 +51,9 @@ arguments `./holdemeval -hands "AdAh QsQd 6c5c"`:
 
    * default (`staticdata`): 0.60sec to build, 0.34sec to run
    * `-tags gendata` : 0.17sec to build, 2.2sec to run
-   * `-tags filedata`: 0.17sec to build, 0.19sec to run
+   * `-tags filedata`: 0.17sec to build, 0.32sec to run
 
-The run times differ because `-tags filedata` reads the raw data
-from a file, `staticdata` has to decompress the data before
-it can be used, and `-tags gendata` has to compute the tables from scratch.
+The run times differ because `-tags filedata` and `staticdata` have to decompress the data before it can be used, and `-tags gendata` has to compute the tables from scratch.
 
 My machine has 12 CPU cores, so with fewer cores the startup cost of generating
 the tables will be scaled up as you'd expect.
