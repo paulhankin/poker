@@ -15,6 +15,8 @@ var (
 	rootNode3table [16 * 16 * 16]int16
 )
 
+// denorm undoes some crunching performed by gen_tables_static.go.
+// See that file for documentation.
 func denorm(tbl []uint32, n int) {
 	for i := 0; i < n*52; i++ {
 		if tbl[i] == 0 {
