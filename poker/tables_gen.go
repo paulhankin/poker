@@ -28,6 +28,9 @@ func genTables(ncards int, indextable []uint32, node *tblNode, done []bool) {
 	}
 }
 
+// The 3-card tables are simpler: we build a table with the rank for
+// each triple of cards. Hand c1,c2,c3 is stored at index r1*256+r2*16+r3
+// where r1, r2, r3 are the ranks (from 0 to 12) of the cards c1,c2,c3.
 func genTables3(indextable []int16) {
 	var cards [3]Card
 	for i := 0; i < 13; i++ {
