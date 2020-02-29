@@ -15,21 +15,25 @@ import (
 )
 
 func writeFile() {
-	f, err := os.Create("poker.dat")
+	rf, err := os.Create("poker.dat")
 	if err != nil {
 		log.Fatalf("failed to create data file: %v", err)
 	}
+	zf := gzip.NewWriter(rf)
 	tbl3, tbl5, tbl7 := poker.InternalTables()
-	if err := binary.Write(f, binary.LittleEndian, tbl7[:]); err != nil {
+	if err := binary.Write(zf, binary.LittleEndian, tbl7[:]); err != nil {
 		log.Fatalf("failed to write data: %v", err)
 	}
-	if err := binary.Write(f, binary.LittleEndian, tbl5[:]); err != nil {
+	if err := binary.Write(zf, binary.LittleEndian, tbl5[:]); err != nil {
 		log.Fatalf("failed to write data: %v", err)
 	}
-	if err := binary.Write(f, binary.LittleEndian, tbl3[:]); err != nil {
+	if err := binary.Write(zf, binary.LittleEndian, tbl3[:]); err != nil {
 		log.Fatalf("failed to write data: %v", err)
 	}
-	if err := f.Close(); err != nil {
+	if err := zf.Close(); err != nil {
+		log.Fatalf("failed to write data: %v", err)
+	}
+	if err := rf.Close(); err != nil {
 		log.Fatalf("failed to write data: %v", err)
 	}
 }
@@ -101,6 +105,8 @@ var pokerTableData = []uint8("`); err != nil {
 }
 
 func main() {
-	writeSource()
+	// Note! writeFile must come first, because writeSource overwrites
+	// the data in the table.
 	writeFile()
+	writeSource()
 }

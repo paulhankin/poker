@@ -3,6 +3,7 @@
 package poker
 
 import (
+	"compress/gzip"
 	"encoding/binary"
 	"os"
 )
@@ -14,18 +15,27 @@ var (
 )
 
 func init() {
-	f, err := os.Open("poker.dat")
+	rf, err := os.Open("poker.dat")
 	if err != nil {
 		panic(err)
 	}
-	if err := binary.Read(f, binary.LittleEndian, rootNode7table[:]); err != nil {
+	zf, err := gzip.NewReader(rf)
+	if err != nil {
 		panic(err)
 	}
-	if err := binary.Read(f, binary.LittleEndian, rootNode5table[:]); err != nil {
+	if err := binary.Read(zf, binary.LittleEndian, rootNode7table[:]); err != nil {
 		panic(err)
 	}
-	if err := binary.Read(f, binary.LittleEndian, rootNode3table[:]); err != nil {
+	if err := binary.Read(zf, binary.LittleEndian, rootNode5table[:]); err != nil {
 		panic(err)
 	}
-	f.Close()
+	if err := binary.Read(zf, binary.LittleEndian, rootNode3table[:]); err != nil {
+		panic(err)
+	}
+	if err := zf.Close(); err != nil {
+		panic(err)
+	}
+	if err := rf.Close(); err != nil {
+		panic(err)
+	}
 }
