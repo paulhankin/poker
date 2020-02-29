@@ -51,11 +51,31 @@ var pokerTableData = []uint8("`); err != nil {
 	}
 	e64 := base64.NewEncoder(base64.RawStdEncoding, f)
 	zs := gzip.NewWriter(e64)
+
+	// We shrink the indexes for non-terminal/non-nil nodes.
+	// We divide the index part by 52 (it's always a multiple),
+	// and subtract the ID of the current node.
+	// That reduces the compressed form from ~9MB to ~7.7MB.
+	norm := func(tbl []uint32, n int) {
+		for i := range tbl[:n*52] {
+			if tbl[i] == 0 {
+				continue
+			}
+			nodeIndex := uint32(i / 52)
+			sx := tbl[i] & 0xff
+			ix := (tbl[i] >> 8) / 52
+			tbl[i] = sx | ((ix - nodeIndex) << 8)
+		}
+	}
+
 	fmt.Println("writing 7 table")
+	norm(tbl7, 61153)
+
 	if err := binary.Write(zs, binary.LittleEndian, tbl7[:]); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("writing 5 table")
+	norm(tbl5, 924)
 	if err := binary.Write(zs, binary.LittleEndian, tbl5[:]); err != nil {
 		log.Fatal(err)
 	}

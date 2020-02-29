@@ -35,9 +35,9 @@ Build modes
 There are three modes of using this package, which can be chosen
 with built tags. These affect how the data tables are constructed.
 
-First is the default (`staticdata`) in which case a large (9MB) source file
+First is the default (`staticdata`) in which case a large (7.7MB) source file
 is compiled into the package, which contains the data tables. This makes
-the binary roughly 9MB bigger, but also compiles a little slower relative
+the binary roughly 7.7MB bigger, but also compiles a little slower relative
 to the other options. There is a little bit of startup time (0.2s), because the tables are stored compressed and are uncompressed at runtime.
 
 Second is `-tags gendata` in which case a few seconds will be spent at

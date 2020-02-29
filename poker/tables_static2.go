@@ -15,6 +15,17 @@ var (
 	rootNode3table [16 * 16 * 16]int16
 )
 
+func denorm(tbl []uint32, n int) {
+	for i := 0; i < n*52; i++ {
+		if tbl[i] == 0 {
+			continue
+		}
+		ni := uint32(i / 52)
+		ix := tbl[i] >> 8
+		tbl[i] = (tbl[i] & 0xff) | ((ix+ni)*52)<<8
+	}
+}
+
 func init() {
 	rf := bytes.NewReader(pokerTableData)
 	d64f := base64.NewDecoder(base64.RawStdEncoding, rf)
@@ -34,4 +45,7 @@ func init() {
 	if err := f.Close(); err != nil {
 		panic(err)
 	}
+
+	denorm(rootNode5table[:], 924)
+	denorm(rootNode7table[:], 61153)
 }
